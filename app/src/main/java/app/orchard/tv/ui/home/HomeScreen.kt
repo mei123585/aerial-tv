@@ -408,9 +408,10 @@ fun HomeScreen(
         uiHidden = true
     }
 
-    // ===== 新增：UI隐藏时的返回键逻辑 =====
+    // 二级菜单返回键关闭，回到纯直播画面（不显示一级UI）
     BackHandler(enabled = overlay is Overlay.LiveSourceMenu) {
         vm.overlay = Overlay.None
+        uiHidden = true // 关闭二级菜单后保持UI隐藏
     }
 
     BackHandler(enabled = uiHidden && overlay == Overlay.None && focusedPkg == "com.jxiptv.softconsole") {
