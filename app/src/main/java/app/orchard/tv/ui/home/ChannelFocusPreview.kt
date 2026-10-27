@@ -24,9 +24,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import app.orchard.tv.LiveSource
 import app.orchard.tv.system.DiagLog
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
@@ -36,21 +34,25 @@ fun ChannelFocusPreview(
     source: LiveSource?,
     modifier: Modifier = Modifier,
 ) {
-    if (!visible || source == null) return
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var player by remember { mutableStateOf<ExoPlayer?>(null) }
     var surface by remember { mutableStateOf<SurfaceView?>(null) }
-    var firstFrame by remember { mutableStateOf(false) }
 
-    LaunchedEffect(source.url) {
+    LaunchedEffect(source?.url) {
+        // 彻底释放旧播放器，避免声音重叠
         withContext(Dispatchers.Default) { player?.release() }
-        player = null; firstFrame = false
+        player = null
+        
+        if (source == null) return@LaunchedEffect
+        
         val streamUrl = withContext(Dispatchers.IO) { resolveStreamUrl(source) }
         DiagLog.i("channel preview: url = $streamUrl")
         if (streamUrl != null) {
             val exo = ExoPlayer.Builder(context).build()
-            player = exo; exo.playWhenReady = true; exo.volume = 1f
+            player = exo
+            exo.playWhenReady = visible
+            exo.volume = if (visible) 1f else 0f
             val factory = DefaultHttpDataSource.Factory()
                 .setUserAgent("Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36")
                 .setConnectTimeoutMs(10_000).setReadTimeoutMs(10_000)
@@ -59,16 +61,23 @@ fun ChannelFocusPreview(
             val hls = HlsMediaSource.Factory(factory).createMediaSource(MediaItem.fromUri(Uri.parse(streamUrl)))
             exo.setMediaSource(hls)
             exo.addListener(object : Player.Listener {
-                override fun onRenderedFirstFrame() { firstFrame = true }
                 override fun onPlayerError(error: PlaybackException) { DiagLog.i("player err: ${error.errorCodeName}") }
             })
-            surface?.let { exo.setVideoSurfaceView(it) }; exo.prepare()
+            surface?.let { exo.setVideoSurfaceView(it) }
+            exo.prepare()
         }
+    }
+
+    // 可见性变化时控制播放暂停
+    LaunchedEffect(visible) {
+        player?.playWhenReady = visible
+        player?.volume = if (visible) 1f else 0f
     }
 
     DisposableEffect(Unit) {
         val obs = LifecycleEventObserver { _, e ->
             when (e) {
+                // 进入应用（onStop）暂停，回到桌面（onStart）继续
                 Lifecycle.Event.ON_STOP -> { player?.pause(); player?.volume = 0f }
                 Lifecycle.Event.ON_START -> { player?.playWhenReady = true; player?.volume = 1f }
                 else -> {}
@@ -78,7 +87,8 @@ fun ChannelFocusPreview(
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(obs)
             val p = player; player = null
-            if (p != null) CoroutineScope(Dispatchers.Default).launch { runCatching { p.release() } }
+            // 彻底释放，避免后台残留声音
+            p?.release()
         }
     }
 
