@@ -231,7 +231,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             delay(4_000)
             val granted = context.checkCallingOrSelfPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS) ==
-                android.content.pm.PackageManager.PERMISSION.GRANTED
+                android.content.pm.PackageManager.PERMISSION_GRANTED
             val status = SystemProbe.homeStatus(context)
             if (status == HomeStatus.NotDefault && !granted && (overlay != Overlay.None || screensaverVisible)) return@launch
             prefs.edit().putBoolean("setup_offered", true).apply()
