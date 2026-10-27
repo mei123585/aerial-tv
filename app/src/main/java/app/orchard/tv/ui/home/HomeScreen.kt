@@ -559,11 +559,7 @@ val target = with(density) { metrics.scrollFor(if (inGrid) focusedRow else 0, ro
         homeShot?.let { shot -> Canvas(Modifier.fillMaxSize()) { drawImage(shot) } }
         PanelBackdrop(Wallpapers.frosted.takeIf { Wallpapers.backdrop != null }, { backdropFrost }, { backdropVeil })
 
-        // ===== 新增：直播预览组件 =====
-        ChannelFocusPreview(
-            visible = channelPreviewVisible,
-            source = vm.getAllLiveSources().getOrNull(vm.currentLiveSourceIndex),
-        )
+        
         Box(
             Modifier
                 .fillMaxSize()
@@ -661,6 +657,11 @@ val target = with(density) { metrics.scrollFor(if (inGrid) focusedRow else 0, ro
             // GPU draws every tile again under the panel each frame. Lite there lets the clock and
             // the tiles fade out under the panel's veil; the wallpaper and plate stay.
             val shedUnderPanel = Build.VERSION.SDK_INT < Build.VERSION_CODES.N && AerialSettings.lite
+            // ===== 直播预览：壁纸之上、应用图标之下 =====
+            ChannelFocusPreview(
+                visible = channelPreviewVisible,
+                source = vm.getAllLiveSources().getOrNull(vm.currentLiveSourceIndex),
+            )
             Box(
                 Modifier
                     .fillMaxSize()
