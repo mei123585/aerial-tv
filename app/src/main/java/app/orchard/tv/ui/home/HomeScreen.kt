@@ -229,22 +229,25 @@ fun HomeScreen(
     val focusedRow = if (pillFocused || focusedIndex < 0) 0 else focusedIndex / COLUMNS
     val gridEnabled = overlay == Overlay.None
 
-    // ===== 新增：直播预览和UI隐藏状态 =====
+// ===== 直播预览和UI隐藏状态 =====
     var uiHidden by remember { mutableStateOf(false) }
     val focusedPkg = apps.getOrNull(focusedIndex)?.packageName ?: ""
     val channelPreviewVisible = focusedPkg == "com.jxiptv.softconsole" &&
         focusedRow == 0 &&
-        (overlay == Overlay.None || overlay is Overlay.LiveSourceMenu) &&
-        !vm.screensaverVisible && moving == null && !uiHidden
+        !vm.screensaverVisible && moving == null
 
-    // 10秒无操作自动隐藏UI
+    // 10秒无操作自动隐藏UI（一级和二级菜单都生效）
     LaunchedEffect(focusedPkg, overlay, uiHidden) {
         if (focusedPkg == "com.jxiptv.softconsole" && overlay == Overlay.None && !uiHidden) {
             delay(10_000)
             uiHidden = true
         }
+        // 二级菜单打开时也10秒自动隐藏
+        if (overlay is Overlay.LiveSourceMenu) {
+            delay(10_000)
+            vm.overlay = Overlay.None
+        }
     }
-
     // The aerial wallpaper's film, and how far it shows through.
     val filmCover = remember { Animatable(0f) }
     val liveFilm = remember { LiveFilm() }
