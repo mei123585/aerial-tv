@@ -556,6 +556,14 @@ val target = with(density) { metrics.scrollFor(if (inGrid) focusedRow else 0, ro
             dragged = true
             scope.launch(start = CoroutineStart.UNDISPATCHED) { scroll.snapTo(scroll.value - delta) }
         }
+        homeShot?.let { shot -> Canvas(Modifier.fillMaxSize()) { drawImage(shot) } }
+        PanelBackdrop(Wallpapers.frosted.takeIf { Wallpapers.backdrop != null }, { backdropFrost }, { backdropVeil })
+
+        // ===== 新增：直播预览组件 =====
+        ChannelFocusPreview(
+            visible = channelPreviewVisible,
+            source = vm.getAllLiveSources().getOrNull(vm.currentLiveSourceIndex),
+        )
         Box(
             Modifier
                 .fillMaxSize()
@@ -780,14 +788,7 @@ val target = with(density) { metrics.scrollFor(if (inGrid) focusedRow else 0, ro
             }
         }
 
-        homeShot?.let { shot -> Canvas(Modifier.fillMaxSize()) { drawImage(shot) } }
-        PanelBackdrop(Wallpapers.frosted.takeIf { Wallpapers.backdrop != null }, { backdropFrost }, { backdropVeil })
-
-        // ===== 新增：直播预览组件 =====
-        ChannelFocusPreview(
-            visible = channelPreviewVisible,
-            source = vm.getAllLiveSources().getOrNull(vm.currentLiveSourceIndex),
-        )
+        
 
         // The pill holds only the network and Control Center. The time joins it once the clock
         // above the top row has scrolled away, so the screen never shows the time twice. The small
