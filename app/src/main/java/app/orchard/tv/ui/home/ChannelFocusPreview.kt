@@ -77,7 +77,7 @@ fun ChannelFocusPreview(
     DisposableEffect(Unit) {
         val obs = LifecycleEventObserver { _, e ->
             when (e) {
-                // 进入应用（onStop）暂停，回到桌面（onStart）继续
+                // 进入应用暂停，回到桌面继续播放
                 Lifecycle.Event.ON_STOP -> { player?.pause(); player?.volume = 0f }
                 Lifecycle.Event.ON_START -> { player?.playWhenReady = true; player?.volume = 1f }
                 else -> {}
@@ -87,7 +87,6 @@ fun ChannelFocusPreview(
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(obs)
             val p = player; player = null
-            // 彻底释放，避免后台残留声音
             p?.release()
         }
     }
