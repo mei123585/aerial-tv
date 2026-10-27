@@ -102,6 +102,7 @@ dependencies {
     implementation("androidx.profileinstaller:profileinstaller:1.4.0")
     // Aerial films. 1.8 is the last Media3 that runs on Android 5.0 (1.9 raised minSdk to 23).
     implementation("androidx.media3:media3-exoplayer:1.8.1")
+    implementation("androidx.media3:media3-exoplayer-hls:1.8.1")
     implementation("androidx.media3:media3-datasource:1.8.1")
     implementation("androidx.media3:media3-database:1.8.1")
     // Phone setup page (a tiny LAN web server) and the QR code that opens it.
