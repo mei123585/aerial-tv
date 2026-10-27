@@ -51,6 +51,13 @@ import kotlinx.coroutines.withContext
 /** A brightness poll closer than this to a step is stale: the light engine applies the write meanwhile. */
 private const val POLL_QUIET_MS = 400L
 
+// ===== 新增：直播源数据类 =====
+data class LiveSource(
+    val name: String,
+    val url: String,
+    val isBilibili: Boolean = true,
+)
+
 sealed interface Overlay {
     data object None : Overlay
     data class ControlCenter(val page: CcPage = CcPage.Main) : Overlay
@@ -60,6 +67,8 @@ sealed interface Overlay {
     data object HiddenApps : Overlay
     data object Wallpaper : Overlay
     data class Pin(val mode: PinMode, val onDone: () -> Unit) : Overlay
+    // ===== 新增：直播源选择菜单 =====
+    data object LiveSourceMenu : Overlay
 }
 
 enum class CcPage { Main, Inputs, InputSettings, Update, Setup }
@@ -131,6 +140,51 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     var screensaverVisible by mutableStateOf(false)
     val screensaverSkips = ScreensaverSkips()
 
+    // ===== 新增：直播源管理 =====
+    val presetLiveSources = listOf(
+        LiveSource("央视网", "https://b23.tv/oJgZJqv", isBilibili = true),
+        LiveSource("央视频", "https://b23.tv/anI3d9f", isBilibili = true),
+        LiveSource("央视网快看", "https://b23.tv/zxbwWNq", isBilibili = true),
+        LiveSource("快看", "https://b23.tv/efy30LE", isBilibili = true),
+    )
+    var currentLiveSourceIndex by mutableStateOf(0); private set
+    var customLiveSourceUrl by mutableStateOf(""); private set
+    var customLiveSourceName by mutableStateOf("自定义"); private set
+
+    init {
+        // 读取保存的自定义源和选中索引
+        val prefs = context.getSharedPreferences("live_sources", android.content.Context.MODE_PRIVATE)
+        currentLiveSourceIndex = prefs.getInt("selected_index", 0)
+        customLiveSourceUrl = prefs.getString("custom_url", "") ?: ""
+        customLiveSourceName = prefs.getString("custom_name", "自定义") ?: "自定义"
+    }
+
+    fun getAllLiveSources(): List<LiveSource> {
+        val custom = if (customLiveSourceUrl.isNotBlank()) {
+            LiveSource(customLiveSourceName, customLiveSourceUrl,
+                isBilibili = customLiveSourceUrl.contains("b23.tv") || customLiveSourceUrl.contains("live.bilibili.com"))
+        } else {
+            LiveSource("添加自定义", "", isBilibili = false)
+        }
+        return presetLiveSources + custom
+    }
+
+    fun selectLiveSource(index: Int) {
+        currentLiveSourceIndex = index.coerceIn(0, 4)
+        context.getSharedPreferences("live_sources", android.content.Context.MODE_PRIVATE)
+            .edit().putInt("selected_index", currentLiveSourceIndex).apply()
+    }
+
+    fun saveCustomLiveSource(name: String, url: String) {
+        customLiveSourceName = name.ifBlank { "自定义" }
+        customLiveSourceUrl = url.trim()
+        context.getSharedPreferences("live_sources", android.content.Context.MODE_PRIVATE)
+            .edit()
+            .putString("custom_url", customLiveSourceUrl)
+            .putString("custom_name", customLiveSourceName)
+            .apply()
+    }
+
     /** The phone page's arranging: the tile menu's steps, without the focus moves that go with them on the TV. */
     // Declared before init, which hands it to AppCatalog.
     private val layoutOps: LayoutOps = object : LayoutOps {
@@ -177,7 +231,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             delay(4_000)
             val granted = context.checkCallingOrSelfPermission(android.Manifest.permission.WRITE_SECURE_SETTINGS) ==
-                android.content.pm.PackageManager.PERMISSION_GRANTED
+                android.content.pm.PackageManager.PERMISSION.GRANTED
             val status = SystemProbe.homeStatus(context)
             if (status == HomeStatus.NotDefault && !granted && (overlay != Overlay.None || screensaverVisible)) return@launch
             prefs.edit().putBoolean("setup_offered", true).apply()
@@ -577,4 +631,3 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         if (AppCatalog.layout === layoutOps) AppCatalog.layout = null
     }
 }
-
