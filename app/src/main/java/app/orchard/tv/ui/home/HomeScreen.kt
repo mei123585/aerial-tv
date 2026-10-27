@@ -568,7 +568,6 @@ val target = with(density) { metrics.scrollFor(if (inGrid) focusedRow else 0, ro
                 .graphicsLayer {
                     alpha = if (backdropFrost > 0.999f || homeShot != null) 0f else 1f
                     // UI隐藏时整个桌面所有元素都透明，只留直播画面
-                    if (uiHidden && focusedPkg == "com.jxiptv.softconsole" && overlay == Overlay.None) alpha = 0f
                 }
                 // Recorded while Control Center is open, for the picture that stands in for Home.
                 .drawWithContent {
