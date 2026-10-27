@@ -165,7 +165,8 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             LiveSource(customLiveSourceName, customLiveSourceUrl,
                 isBilibili = customLiveSourceUrl.contains("b23.tv") || customLiveSourceUrl.contains("live.bilibili.com"))
         } else {
-            LiveSource("添加自定义", "", isBilibili = false)
+            // 默认用第一个源
+            presetLiveSources[0]
         }
         return presetLiveSources + custom
     }
