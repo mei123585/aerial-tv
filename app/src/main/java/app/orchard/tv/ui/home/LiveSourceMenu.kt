@@ -1,6 +1,8 @@
 package app.orchard.tv.ui.home
 
 import android.view.KeyEvent as NativeKeyEvent
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
@@ -26,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -54,8 +57,8 @@ fun LiveSourceMenu(
     val focusRequesters = remember { List(5) { FocusRequester() } }
     LaunchedEffect(visible) { focusRequesters.getOrNull(currentIndex)?.requestFocus() }
 
-    Box(modifier = Modifier.fillMaxSize().padding(bottom = 80.dp), contentAlignment = Alignment.BottomCenter) {
-        Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.CenterVertically) {
+    Box(modifier = Modifier.fillMaxSize().padding(bottom = 30.dp), contentAlignment = Alignment.BottomCenter) {
+        Row(horizontalArrangement = Arrangement.spacedBy(28.dp), verticalAlignment = Alignment.CenterVertically) {
             sources.forEachIndexed { index, source ->
                 LiveSourceCard(
                     source = source,
@@ -86,12 +89,18 @@ private fun LiveSourceCard(
     onFocusChange: (Boolean) -> Unit,
     focusRequester: FocusRequester,
 ) {
+    // 和原生图标一样的大小：宽高比9:16，焦点时放大1.1倍
+    val cardWidth = 180.dp
+    val cardHeight = cardWidth * 9f / 16f
+    val scale by animateFloatAsState(if (isFocused) 1.1f else 1f, spring(0.86f, 300f), label="scale")
+    
     Box(
         modifier = Modifier
-            .width(180.dp)
-            .size(width = 180.dp, height = 110.dp)
+            .scale(scale)
+            .width(cardWidth)
+            .size(width = cardWidth, height = cardHeight)
             .clip(RoundedCornerShape(16.dp))
-            .background(if (isFocused) Color.White.copy(0.95f) else Color.Black.copy(0.6f))
+            .background(if (isFocused) Color.White.copy(0.2f) else Color.Transparent)
             .border(if (isFocused) 2.dp else 0.dp, Color.White, RoundedCornerShape(16.dp))
             .focusRequester(focusRequester)
             .onFocusChanged { onFocusChange(it.isFocused) }
@@ -107,23 +116,24 @@ private fun LiveSourceCard(
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            // 图标区域，和原生图标一样大
             Box(
                 modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .size(120.dp)
+                    .clip(RoundedCornerShape(12.dp))
                     .background(Color(0xFFCC0000)),
                 contentAlignment = Alignment.Center,
             ) {
-                BasicText("TV", style = TextStyle(Color.White, fontSize = 16.sp))
+                BasicText("直播", style = TextStyle(Color.White, fontSize = 24.sp))
             }
             BasicText(
                 text = source.name,
                 style = TextStyle(
-                    color = if (isFocused) Color.Black else Color.White,
+                    color = Color.White,
                     textAlign = TextAlign.Center,
-                    fontSize = 14.sp,
+                    fontSize = 16.sp,
                 ),
-                modifier = Modifier.padding(top = 8.dp),
+                modifier = Modifier.padding(top = 12.dp),
             )
         }
     }
