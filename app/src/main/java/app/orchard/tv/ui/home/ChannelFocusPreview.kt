@@ -39,9 +39,13 @@ fun ChannelFocusPreview(
     var player by remember { mutableStateOf<ExoPlayer?>(null) }
     var surface by remember { mutableStateOf<TextureView?>(null) }
 
+    // 切换源时释放旧播放器并创建新的
     LaunchedEffect(source?.url) {
-        withContext(Dispatchers.Default) { player?.release() }
+        // 先释放旧播放器（在主线程，避免竞态）
+        player?.release()
         player = null
+        // 清除旧画面，避免残留静态帧
+        surface?.let { player?.clearVideoTextureView(it) }
 
         if (source == null) return@LaunchedEffect
 
@@ -50,7 +54,7 @@ fun ChannelFocusPreview(
         if (streamUrl != null) {
             val exo = ExoPlayer.Builder(context).build()
             player = exo
-            exo.playWhenReady = visible
+            exo.playWhenReady = visible  // 创建时就根据visible决定是否播放
             exo.volume = if (visible) 1f else 0f
             val factory = DefaultHttpDataSource.Factory()
                 .setUserAgent("Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36")
@@ -62,14 +66,24 @@ fun ChannelFocusPreview(
             exo.addListener(object : Player.Listener {
                 override fun onPlayerError(error: PlaybackException) { DiagLog.i("player err: ${error.errorCodeName}") }
             })
+            // 如果surface已经存在就绑定，否则等AndroidView创建后再绑定
             surface?.let { exo.setVideoTextureView(it) }
             exo.prepare()
         }
     }
 
+    // visible变化时控制播放/暂停，并清除画面
     LaunchedEffect(visible) {
-        player?.playWhenReady = visible
-        player?.volume = if (visible) 1f else 0f
+        if (visible) {
+            surface?.let { player?.setVideoTextureView(it) }
+            player?.playWhenReady = true
+            player?.volume = 1f
+        } else {
+            // 不可见时清除画面，避免残留静态帧
+            surface?.let { player?.clearVideoTextureView(it) }
+            player?.playWhenReady = false
+            player?.volume = 0f
+        }
     }
 
     DisposableEffect(Unit) {
@@ -92,7 +106,9 @@ fun ChannelFocusPreview(
         modifier = modifier.fillMaxSize(),
         factory = { ctx -> TextureView(ctx).also {
             it.isFocusable = false; it.isFocusableInTouchMode = false
-            surface = it; player?.setVideoTextureView(it)
+            surface = it
+            // 如果播放器已经存在，绑定surface
+            player?.setVideoTextureView(it)
         }},
         onRelease = { player?.clearVideoTextureView(it); surface = null },
     )
