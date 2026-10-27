@@ -78,8 +78,9 @@ fun ChannelFocusPreview(
             surface?.let { player?.setVideoTextureView(it) }
             player?.playWhenReady = true
             player?.volume = 1f
+            // 跳到直播最新位置，不接着暂停的地方放
+            player?.seekToDefaultPosition()
         } else {
-            // 不可见时清除画面，避免残留静态帧
             surface?.let { player?.clearVideoTextureView(it) }
             player?.playWhenReady = false
             player?.volume = 0f
