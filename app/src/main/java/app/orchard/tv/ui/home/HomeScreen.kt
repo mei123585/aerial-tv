@@ -420,13 +420,17 @@ fun HomeScreen(
         Modifier
             .fillMaxSize()
             .onPreviewKeyEvent { e ->
-                // ===== 新增：UI隐藏时按键逻辑 =====
-                if (uiHidden && overlay !is Overlay.LiveSourceMenu && focusedPkg == "com.jxiptv.softconsole") {
+                // ===== UI隐藏时按键逻辑 =====
+                if (uiHidden && focusedPkg == "com.jxiptv.softconsole") {
                     if (e.type == KeyEventType.KeyDown) {
-                        if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_MENU) {
-                            vm.overlay = Overlay.LiveSourceMenu
-                        } else {
-                            uiHidden = false
+                        when (e.nativeKeyEvent.keyCode) {
+                            // 菜单键呼二级菜单
+                            NativeKeyEvent.KEYCODE_MENU -> vm.overlay = Overlay.LiveSourceMenu
+                            // 音量键不恢复UI，直接透传
+                            NativeKeyEvent.KEYCODE_VOLUME_UP, NativeKeyEvent.KEYCODE_VOLUME_DOWN,
+                            NativeKeyEvent.KEYCODE_VOLUME_MUTE -> return@onPreviewKeyEvent false
+                            // 其他任意键恢复UI
+                            else -> uiHidden = false
                         }
                     }
                     return@onPreviewKeyEvent true
