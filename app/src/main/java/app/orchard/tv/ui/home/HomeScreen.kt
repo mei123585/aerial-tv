@@ -423,6 +423,7 @@ fun HomeScreen(
         Modifier
             .fillMaxSize()
             .onPreviewKeyEvent { e ->
+                lastKeyTime = System.currentTimeMillis()
                 // ===== UI隐藏时按键逻辑 =====
                 if (uiHidden && focusedPkg == "com.jxiptv.softconsole") {
                     if (e.type == KeyEventType.KeyDown) {
