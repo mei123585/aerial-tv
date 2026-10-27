@@ -231,6 +231,7 @@ fun HomeScreen(
 
 // ===== 直播预览和UI隐藏状态 =====
     var uiHidden by remember { mutableStateOf(false) }
+    var lastKeyTime by remember { mutableStateOf(0L) }
     val focusedPkg = apps.getOrNull(focusedIndex)?.packageName ?: ""
     val channelPreviewVisible = focusedPkg == "com.jxiptv.softconsole" &&
         focusedRow == 0 &&
