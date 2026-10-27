@@ -839,7 +839,7 @@ val target = with(density) { metrics.scrollFor(if (inGrid) focusedRow else 0, ro
         AnimatedVisibility(
             visible = moving != null,
             enter = fadeIn(tween(200, easing = Motion.EaseOut)) + slideInVertically(tween(260, easing = Motion.EaseOut)) { it / 2 },
-            exit = fadeOut(tween(150, easing = Motion.EaseOut)) + slideOutVertically(tween(150, easing = Motion.EaseOut) { it / 2 }),
+            exit = fadeOut(tween(150, easing = Motion.EaseOut)) + slideOutVertically(tween(150, easing = Motion.EaseOut)) { it / 2 },
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 28.dp),
         ) {
             // Screens that can be touched also say how to move with a finger.
