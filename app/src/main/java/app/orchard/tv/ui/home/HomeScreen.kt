@@ -784,10 +784,10 @@ val target = with(density) { metrics.scrollFor(if (inGrid) focusedRow else 0, ro
         PanelBackdrop(Wallpapers.frosted.takeIf { Wallpapers.backdrop != null }, { backdropFrost }, { backdropVeil })
 
         // ===== 新增：直播预览组件 =====
-        //ChannelFocusPreview(
-            //visible = channelPreviewVisible,
-            //source = vm.getAllLiveSources().getOrNull(vm.currentLiveSourceIndex),
-        //)
+        ChannelFocusPreview(
+            visible = channelPreviewVisible,
+            source = vm.getAllLiveSources().getOrNull(vm.currentLiveSourceIndex),
+        )
 
         // The pill holds only the network and Control Center. The time joins it once the clock
         // above the top row has scrolled away, so the screen never shows the time twice. The small
