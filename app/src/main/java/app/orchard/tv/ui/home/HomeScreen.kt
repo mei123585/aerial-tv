@@ -566,11 +566,9 @@ val target = with(density) { metrics.scrollFor(if (inGrid) focusedRow else 0, ro
                 // While moving an app, a tap on empty space ends the move, as OK does.
                 .pointerInput(Unit) { detectTapGestures { if (movingNow != null) vm.endMove() } }
                 .graphicsLayer {
-                    // Under the frost once it is whole, Home is not drawn at all: on MFTR0 the
-                    // picture, plate and tiles cost the GPU as much again as the panel over them.
                     alpha = if (backdropFrost > 0.999f || homeShot != null) 0f else 1f
-                    // ===== 新增：UI隐藏时整个界面透明 =====
-                    if (uiHidden && focusedPkg == "com.jxiptv.softconsole") alpha = 0f
+                    // UI隐藏时整个桌面所有元素都透明，只留直播画面
+                    if (uiHidden && focusedPkg == "com.jxiptv.softconsole" && overlay == Overlay.None) alpha = 0f
                 }
                 // Recorded while Control Center is open, for the picture that stands in for Home.
                 .drawWithContent {
