@@ -1,7 +1,7 @@
 package app.orchard.tv.ui.home
 
 import android.net.Uri
-import android.view.SurfaceView
+import android.view.TextureView
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -37,7 +37,7 @@ fun ChannelFocusPreview(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var player by remember { mutableStateOf<ExoPlayer?>(null) }
-    var surface by remember { mutableStateOf<SurfaceView?>(null) }
+    var surface by remember { mutableStateOf<TextureView?>(null) }
 
     LaunchedEffect(source?.url) {
         // 彻底释放旧播放器，避免声音重叠
@@ -63,7 +63,7 @@ fun ChannelFocusPreview(
             exo.addListener(object : Player.Listener {
                 override fun onPlayerError(error: PlaybackException) { DiagLog.i("player err: ${error.errorCodeName}") }
             })
-            surface?.let { exo.setVideoSurfaceView(it) }
+            surface?.let { exo.setVideoTextureView(it) }
             exo.prepare()
         }
     }
@@ -94,11 +94,11 @@ fun ChannelFocusPreview(
 
     AndroidView(
         modifier = modifier.fillMaxSize(),
-        factory = { ctx -> SurfaceView(ctx).also {
+        factory = { ctx -> TextureView(ctx).also {
             it.isFocusable = false; it.isFocusableInTouchMode = false
-            surface = it; player?.setVideoSurfaceView(it)
+            surface = it; player?.setVideoTextureView(it)
         }},
-        onRelease = { player?.clearVideoSurfaceView(it); surface = null },
+        onRelease = { player?.clearVideoTextureView(it); surface = null },
     )
 }
 
