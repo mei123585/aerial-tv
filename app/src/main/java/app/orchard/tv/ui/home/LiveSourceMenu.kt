@@ -55,7 +55,10 @@ fun LiveSourceMenu(
     var focusedIndex by remember { mutableIntStateOf(currentIndex) }
     var showInputDialog by remember { mutableStateOf(false) }
     val focusRequesters = remember { List(5) { FocusRequester() } }
-    LaunchedEffect(visible) { focusRequesters.getOrNull(currentIndex)?.requestFocus() }
+    LaunchedEffect(visible) {
+        kotlinx.coroutines.delay(100) // 等视图加载完再请求焦点
+        focusRequesters.getOrNull(currentIndex)?.requestFocus()
+    }
 
     Box(modifier = Modifier.fillMaxSize().padding(bottom = 30.dp), contentAlignment = Alignment.BottomCenter) {
         Row(horizontalArrangement = Arrangement.spacedBy(28.dp), verticalAlignment = Alignment.CenterVertically) {
