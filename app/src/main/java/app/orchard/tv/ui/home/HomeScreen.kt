@@ -403,6 +403,11 @@ fun HomeScreen(
         else if (AerialSettings.backStartsScreensaver) onStartScreensaver()
     }
 
+    // ===== 手动快速隐藏UI：10秒内按返回键立刻藏 =====
+    BackHandler(enabled = focusedPkg == "com.jxiptv.softconsole" && !uiHidden && overlay == Overlay.None && moving == null) {
+        uiHidden = true
+    }
+
     // ===== 新增：UI隐藏时的返回键逻辑 =====
     BackHandler(enabled = overlay is Overlay.LiveSourceMenu) {
         vm.overlay = Overlay.None
@@ -411,7 +416,6 @@ fun HomeScreen(
     BackHandler(enabled = uiHidden && overlay == Overlay.None && focusedPkg == "com.jxiptv.softconsole") {
         uiHidden = false
     }
-
     BoxWithConstraints(
         Modifier
             .fillMaxSize()
