@@ -101,7 +101,7 @@ private fun LiveSourceCard(
         modifier = Modifier
             .scale(scale)
             .width(cardWidth)
-            .size(width = cardWidth, height = cardHeight)
+            .size(cardWidth, cardHeight)
             .clip(RoundedCornerShape(16.dp))
             .background(if (isFocused) Color.White.copy(0.2f) else Color.Transparent)
             .border(if (isFocused) 2.dp else 0.dp, Color.White, RoundedCornerShape(16.dp))
