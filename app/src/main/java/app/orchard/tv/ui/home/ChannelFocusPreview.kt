@@ -40,12 +40,11 @@ fun ChannelFocusPreview(
     var surface by remember { mutableStateOf<TextureView?>(null) }
 
     LaunchedEffect(source?.url) {
-        // 彻底释放旧播放器，避免声音重叠
         withContext(Dispatchers.Default) { player?.release() }
         player = null
-        
+
         if (source == null) return@LaunchedEffect
-        
+
         val streamUrl = withContext(Dispatchers.IO) { resolveStreamUrl(source) }
         DiagLog.i("channel preview: url = $streamUrl")
         if (streamUrl != null) {
@@ -68,7 +67,6 @@ fun ChannelFocusPreview(
         }
     }
 
-    // 可见性变化时控制播放暂停
     LaunchedEffect(visible) {
         player?.playWhenReady = visible
         player?.volume = if (visible) 1f else 0f
@@ -77,7 +75,6 @@ fun ChannelFocusPreview(
     DisposableEffect(Unit) {
         val obs = LifecycleEventObserver { _, e ->
             when (e) {
-                // 进入应用暂停，回到桌面继续播放
                 Lifecycle.Event.ON_STOP -> { player?.pause(); player?.volume = 0f }
                 Lifecycle.Event.ON_START -> { player?.playWhenReady = true; player?.volume = 1f }
                 else -> {}
