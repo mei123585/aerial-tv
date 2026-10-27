@@ -238,7 +238,7 @@ fun HomeScreen(
         !vm.screensaverVisible && moving == null
 
     // 10秒无操作自动隐藏UI（一级和二级菜单都生效）
-    LaunchedEffect(focusedPkg, overlay, uiHidden) {
+    LaunchedEffect(focusedPkg, overlay, uiHidden, lastKeyTime) {
         if (focusedPkg == "com.jxiptv.softconsole" && overlay == Overlay.None && !uiHidden) {
             delay(10_000)
             uiHidden = true
@@ -247,6 +247,7 @@ fun HomeScreen(
         if (overlay is Overlay.LiveSourceMenu) {
             delay(10_000)
             vm.overlay = Overlay.None
+            uiHidden = true // 二级菜单超时关闭也回到隐藏状态
         }
     }
     // The aerial wallpaper's film, and how far it shows through.
