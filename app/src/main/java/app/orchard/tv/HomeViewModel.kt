@@ -4,6 +4,7 @@ import android.app.Application
 import android.os.Build
 import android.os.SystemClock
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
