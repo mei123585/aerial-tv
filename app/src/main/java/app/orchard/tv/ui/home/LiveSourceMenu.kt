@@ -1,20 +1,14 @@
 package app.orchard.tv.ui.home
 
+import android.content.ComponentName
 import android.view.KeyEvent as NativeKeyEvent
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -25,31 +19,37 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import app.orchard.tv.LiveSource
+import app.orchard.tv.apps.AppEntry
+import app.orchard.tv.apps.TileArtFactory
 import app.orchard.tv.system.Sounds
 import app.orchard.tv.ui.components.liquidGlass
 import app.orchard.tv.ui.theme.Glyph
 
-private val tileColors = listOf(
-    Color(0xFFD32F2F), Color(0xFF1976D2), Color(0xFF388E3C), Color(0xFFF57C00),
-    Color(0xFF7B1FA2), Color(0xFF00796B), Color(0xFF5D4037), Color(0xFF455A64),
+private val liveColors = listOf(
+    Pair(0xFFD32F2F.toInt(), 0xFF8E0000.toInt()),
+    Pair(0xFF1976D2.toInt(), 0xFF0D47A1.toInt()),
+    Pair(0xFF388E3C.toInt(), 0xFF1B5E20.toInt()),
+    Pair(0xFFF57C00.toInt(), 0xFFE65100.toInt()),
+    Pair(0xFF7B1FA2.toInt(), 0xFF4A148C.toInt()),
+    Pair(0xFF00796B.toInt(), 0xFF004D40.toInt()),
 )
+
+private fun liveSourceAppEntry(source: LiveSource): AppEntry {
+    val (top, bottom) = liveColors[source.colorIndex % liveColors.size]
+    val art = TileArtFactory.glyphTile(top, bottom, Glyph.Play)
+    return AppEntry(
+        packageName = "live_${source.id}",
+        label = source.name,
+        component = ComponentName("app.orchard.tv", "app.orchard.tv.MainActivity"),
+        leanback = true,
+        removable = !source.isPreset,
+        art = art,
+    )
+}
 
 @Composable
 fun LiveSourceMenu(
@@ -66,7 +66,7 @@ fun LiveSourceMenu(
     val currentIndex = sources.indexOfFirst { it.id == currentId }.coerceAtLeast(0)
     var focusedIndex by remember { mutableIntStateOf(currentIndex) }
     var menuForId by remember { mutableStateOf<String?>(null) }
-    val focusRequesters = remember { List(sources.size) { FocusRequester() } }
+    val focusRequesters = remember { List(sources.size) { androidx.compose.ui.focus.FocusRequester() } }
     LaunchedEffect(visible) {
         kotlinx.coroutines.delay(150)
         focusRequesters.getOrNull(currentIndex)?.requestFocus()
@@ -88,23 +88,25 @@ fun LiveSourceMenu(
             modifier = Modifier.padding(bottom = 80.dp).padding(horizontal = gridMargin),
         ) {
             sources.forEachIndexed { index, source ->
-                LiveSourceTile(
-                    source = source,
-                    tileW = tileW,
-                    tileH = tileH,
-                    isFocused = focusedIndex == index && menuForId == null,
-                    isCurrent = source.id == currentId,
-                    onClick = { onSelect(source.id); onDismiss() },
-                    onMenu = { menuForId = source.id },
-                    onBack = { if (menuForId != null) menuForId = null else onDismiss() },
-                    onFocusChange = { if (it) { focusedIndex = index; Sounds.focusMoved() } },
+                val app = remember(source.id, source.name) { liveSourceAppEntry(source) }
+                AppTile(
+                    app = app,
+                    width = tileW,
+                    height = tileH,
                     focusRequester = focusRequesters[index],
+                    enabled = true,
+                    moving = false,
+                    appearDelayMs = null,
+                    onFocused = { focusedIndex = index; Sounds.focusMoved() },
+                    onClick = { onSelect(source.id); onDismiss() },
+                    onLongPress = { menuForId = source.id },
+                    rowEnd = index == sources.size - 1,
                 )
             }
         }
         if (menuForId != null) {
             val source = sources.find { it.id == menuForId } ?: return@Box
-            val first = remember { FocusRequester() }
+            val first = remember { androidx.compose.ui.focus.FocusRequester() }
             LaunchedEffect(menuForId) { first.requestFocus() }
             Column(
                 Modifier
@@ -113,78 +115,15 @@ fun LiveSourceMenu(
                     .padding(8.dp)
                     .align(Alignment.Center),
             ) {
-                BasicText(source.name, style = TextStyle(Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold),
+                BasicText(source.name, style = TextStyle(androidx.compose.ui.graphics.Color.White, fontSize = 17.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
                     modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 6.dp))
                 MenuRow(Glyph.Pencil, "重命名", { onRename(source.id); menuForId = null }, focusRequester = first)
                 MenuRow(Glyph.Globe, "编辑地址", { onEditUrl(source.id); menuForId = null })
                 if (!source.isPreset) {
                     MenuRow(Glyph.Trash, "删除", { onDelete(source.id); menuForId = null }, destructive = true)
                 }
-                MenuRow(Glyph.Move, "取消", { menuForId = null })
+                MenuRow(Glyph.ChevronRight, "取消", { menuForId = null })
             }
         }
-    }
-}
-
-@Composable
-private fun LiveSourceTile(
-    source: LiveSource,
-    tileW: androidx.compose.ui.unit.Dp,
-    tileH: androidx.compose.ui.unit.Dp,
-    isFocused: Boolean,
-    isCurrent: Boolean,
-    onClick: () -> Unit,
-    onMenu: () -> Unit,
-    onBack: () -> Unit,
-    onFocusChange: (Boolean) -> Unit,
-    focusRequester: FocusRequester,
-) {
-    val scale by animateFloatAsState(if (isFocused) 1.1f else 1f, spring(0.86f, 300f), label = "scale")
-    val bgColor = tileColors[source.colorIndex % tileColors.size]
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .scale(scale)
-            .graphicsLayer { shadowElevation = if (isFocused) 20f else 8f }
-            .focusRequester(focusRequester)
-            .onFocusChanged { onFocusChange(it.isFocused) }
-            .focusable()
-            .onKeyEvent { e ->
-                when (e.nativeKeyEvent.keyCode) {
-                    NativeKeyEvent.KEYCODE_MENU -> { if (e.type == KeyEventType.KeyUp) onMenu(); true }
-                    NativeKeyEvent.KEYCODE_BACK -> { if (e.type == KeyEventType.KeyUp) onBack(); true }
-                    NativeKeyEvent.KEYCODE_DPAD_CENTER, NativeKeyEvent.KEYCODE_ENTER -> {
-                        if (e.type == KeyEventType.KeyUp) { Sounds.select(); onClick(); true } else false
-                    }
-                    else -> false
-                }
-            },
-    ) {
-        Box(
-            modifier = Modifier
-                .width(tileW)
-                .height(tileH)
-                .clip(RoundedCornerShape(28.dp))
-                .background(bgColor)
-                .then(if (isFocused) Modifier.border(2.dp, Color.White, RoundedCornerShape(28.dp)) else Modifier),
-            contentAlignment = Alignment.Center,
-        ) {
-            BasicText(
-                if (isCurrent) "▶" else source.name.take(1),
-                style = TextStyle(Color.White, fontSize = 48.sp, fontWeight = FontWeight.Bold),
-            )
-        }
-        BasicText(
-            text = source.name,
-            style = TextStyle(
-                color = Color.White,
-                textAlign = TextAlign.Center,
-                fontSize = 15.sp,
-                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
-                shadow = androidx.compose.ui.graphics.Shadow(Color.Black.copy(alpha = 0.6f), blurRadius = 8f),
-            ),
-            modifier = Modifier.padding(top = 10.dp),
-        )
     }
 }
