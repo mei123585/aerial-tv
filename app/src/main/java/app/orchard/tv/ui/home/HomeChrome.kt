@@ -722,6 +722,7 @@ private fun conditionName(kind: WeatherKind): Int = when (kind) {
  * pill, so the wallpaper keeps the rest of the screen. A soft shadow keeps it readable on photos.
  */
 @Composable
+@Composable
 fun CornerClock(now: LocalDateTime, modifier: Modifier = Modifier, toSaver: () -> Float = { 0f }, saving: Boolean = false) {
     val drift = heldDrift(saving, now)
     val dim = Color.White.copy(alpha = 0.92f)
@@ -731,44 +732,29 @@ fun CornerClock(now: LocalDateTime, modifier: Modifier = Modifier, toSaver: () -
         compositingStrategy = CompositingStrategy.ModulateAlpha
     }
     Column(modifier, horizontalAlignment = Alignment.Start) {
-        BasicText(
-            greetingText(now.hour),
-            style = Type.Headline.copy(color = dim, shadow = shadow),
-            modifier = aside,
-        )
-        Row(
-            modifier = Modifier.padding(top = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        Row(modifier = aside, verticalAlignment = Alignment.CenterVertically) {
             BasicText(
                 timeText(now),
                 style = Type.SmallClock.copy(fontSize = Type.Title.fontSize, color = dim, shadow = shadow),
                 modifier = Modifier.toSaverClock(toSaver, Type.Title.fontSize, Type.Title.fontSize.value.dp * CAP_TOP, drift),
             )
-            Spacer(Modifier.width(12.dp))
-            Box(
-                Modifier
-                    .width(1.5.dp)
-                    .height(IntrinsicSize.Max)
-                    .background(Color.White.copy(alpha = 0.4f))
+            Spacer(Modifier.width(8.dp))
+            BasicText(greetingText(now.hour), style = Type.Headline.copy(color = dim, shadow = shadow))
+        }
+        BasicText(
+            dateText(now),
+            style = Type.Headline.copy(color = dim, shadow = shadow),
+            modifier = aside.padding(top = 4.dp),
+        )
+        Weather.now?.takeIf { AerialSettings.showWeather }?.let { w ->
+            val place = Weather.place
+            val cond = stringResource(conditionName(w.kind))
+            val temp = if (w.high != null && w.low != null) "${w.low}° ~ ${w.high}°" else "${w.celsius}°"
+            BasicText(
+                listOfNotNull(place, cond, temp).joinToString(" "),
+                style = Type.Headline.copy(color = dim, shadow = shadow),
+                modifier = aside.padding(top = 4.dp),
             )
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = aside) {
-                Weather.now?.takeIf { AerialSettings.showWeather }?.let { w ->
-                    val place = Weather.place
-                    val cond = stringResource(conditionName(w.kind))
-                    val temp = if (w.high != null && w.low != null) "${w.low}°~${w.high}°" else "${w.celsius}°"
-                    BasicText(
-                        listOfNotNull(place, cond, temp).joinToString(" "),
-                        style = Type.Headline.copy(color = dim, shadow = shadow),
-                    )
-                }
-                BasicText(
-                    dateText(now),
-                    style = Type.Headline.copy(color = dim, shadow = shadow),
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-            }
         }
     }
 }
