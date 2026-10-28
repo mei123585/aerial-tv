@@ -2,7 +2,6 @@ package app.orchard.tv.ui.home
 
 import android.content.ComponentName
 import android.view.KeyEvent as NativeKeyEvent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,7 +20,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -50,7 +47,7 @@ private val liveColors = listOf(
     Pair(0xFF00796B.toInt(), 0xFF004D40.toInt()),
 )
 
-private fun liveSourceAppEntry(source: LiveSource, showName: Boolean): AppEntry {
+private fun liveSourceAppEntry(source: LiveSource): AppEntry {
     val (top, bottom) = liveColors[source.colorIndex % liveColors.size]
     val art = TileArtFactory.glyphTile(top, bottom, Glyph.Play)
     return AppEntry(
@@ -99,14 +96,11 @@ fun LiveSourceMenu(
             modifier = Modifier
                 .fillMaxSize()
                 .onKeyEvent { e ->
-                    // 菜单打开时只允许返回键
-                    if (menuForId != null) {
-                        if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_BACK && e.type == KeyEventType.KeyUp) {
-                            menuForId = null
-                            true
-                        } else true // 吃掉所有方向键
-                    } else if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_MENU && e.type == KeyEventType.KeyUp) {
+                    if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_MENU && e.type == KeyEventType.KeyUp && menuForId == null) {
                         sources.getOrNull(focusedIndex)?.let { menuForId = it.id }
+                        true
+                    } else if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_BACK && e.type == KeyEventType.KeyUp && menuForId != null) {
+                        menuForId = null
                         true
                     } else false
                 },
@@ -117,13 +111,13 @@ fun LiveSourceMenu(
                 modifier = Modifier.padding(bottom = 80.dp).padding(horizontal = gridMargin),
             ) {
                 sources.forEachIndexed { index, source ->
-                    val app = remember(source.id, source.name) { liveSourceAppEntry(source, showNames) }
+                    val app = remember(source.id, source.name) { liveSourceAppEntry(source) }
                     AppTile(
                         app = app,
                         width = tileW,
                         height = tileH,
                         focusRequester = focusRequesters[index],
-                        enabled = true,
+                        enabled = menuForId == null,
                         moving = false,
                         appearDelayMs = null,
                         onFocused = { focusedIndex = index; Sounds.focusMoved() },
@@ -139,8 +133,17 @@ fun LiveSourceMenu(
                 val sourceIndex = sources.indexOf(source)
                 val first = remember { FocusRequester() }
                 LaunchedEffect(menuForId) { first.requestFocus() }
+                // 菜单在焦点卡片正上方
+                val tileCenterX = gridMargin + sourceIndex * (tileW + gridGap) + tileW / 2
+                val menuWidth = 250.dp
+                val menuOffsetX = (tileCenterX - menuWidth / 2).coerceAtLeast(0.dp)
                 Column(
-                    Modifier.width(250.dp).liquidGlass(20.dp).padding(8.dp).align(Alignment.Center),
+                    Modifier
+                        .padding(start = menuOffsetX, bottom = 80.dp + tileH + 20.dp)
+                        .width(menuWidth)
+                        .liquidGlass(20.dp)
+                        .padding(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     BasicText(source.name, style = TextStyle(Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold),
                         modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 6.dp))
@@ -152,7 +155,6 @@ fun LiveSourceMenu(
                     if (!source.isPreset) {
                         MenuRow(Glyph.Trash, "删除", { onDelete(source.id); menuForId = null }, destructive = true)
                     }
-                    MenuRow(Glyph.ChevronRight, "取消", { menuForId = null })
                 }
             }
         }
