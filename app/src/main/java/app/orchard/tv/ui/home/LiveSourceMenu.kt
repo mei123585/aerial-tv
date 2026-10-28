@@ -56,7 +56,7 @@ fun LiveSourceMenu(
     var showInputDialog by remember { mutableStateOf(false) }
     val focusRequesters = remember { List(5) { FocusRequester() } }
     LaunchedEffect(visible) {
-        kotlinx.coroutines.delay(100) // 等视图加载完再请求焦点
+        kotlinx.coroutines.delay(300) // 等视图加载完再请求焦点
         focusRequesters.getOrNull(currentIndex)?.requestFocus()
     }
 
