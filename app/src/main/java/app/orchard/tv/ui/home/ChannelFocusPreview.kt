@@ -46,13 +46,19 @@ fun ChannelFocusPreview(
         val streamUrl = withContext(Dispatchers.IO) { resolveStreamUrl(source) }
         DiagLog.i("channel preview: url = $streamUrl")
         if (streamUrl != null) {
-            val exo = ExoPlayer.Builder(context).build()
+            val trackSelector = androidx.media3.exoplayer.trackselection.DefaultTrackSelector(context).apply {
+                setParameters(buildUponParameters().setMaxVideoSize(Int.MAX_VALUE, Int.MAX_VALUE))
+            }
+            val exo = ExoPlayer.Builder(context).setTrackSelector(trackSelector).build()
             player = exo
             val factory = DefaultHttpDataSource.Factory()
-                .setUserAgent("Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36")
+                .setUserAgent("Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
                 .setConnectTimeoutMs(10_000).setReadTimeoutMs(10_000)
             if (source.isBilibili || streamUrl.contains("bilibili.com"))
-                factory.setDefaultRequestProperties(mapOf("Referer" to "https://live.bilibili.com/"))
+                factory.setDefaultRequestProperties(mapOf(
+                    "Referer" to "https://live.bilibili.com/",
+                    "Cookie" to "buvid3=placeholder"
+                ))
             val hls = HlsMediaSource.Factory(factory).createMediaSource(MediaItem.fromUri(Uri.parse(streamUrl)))
             exo.setMediaSource(hls)
             exo.addListener(object : Player.Listener {
