@@ -281,6 +281,11 @@ object AerialSettings {
         app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putBoolean("show_weather", on) }
     }
 
+    fun chooseLivePreview(on: Boolean) {
+    livePreviewEnabled = on
+    app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putBoolean("live_preview", on) }
+    }
+
     fun chooseScreensaverClock(on: Boolean) {
         screensaverClock = on
         app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putBoolean("screensaver_clock", on) }
