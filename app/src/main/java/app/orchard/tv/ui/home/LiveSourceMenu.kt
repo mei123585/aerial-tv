@@ -4,7 +4,6 @@ import android.view.KeyEvent as NativeKeyEvent
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,8 +11,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -35,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -69,31 +69,35 @@ fun LiveSourceMenu(
         focusRequesters.getOrNull(currentIndex)?.requestFocus()
     }
 
+    // 和一级菜单一样的布局参数
+    val screenW = LocalConfiguration.current.screenWidthDp.dp
+    val gridMargin = 56.dp
+    val gridGap = 28.dp
+    val columns = 5
+    val tileW = (screenW - gridMargin * 2 - gridGap * (columns - 1)) / columns
+    val tileH = tileW * 9f / 16f
+
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.4f)),
+        modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.BottomCenter,
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(bottom = 60.dp)) {
-            BasicText(
-                "选择直播源",
-                style = TextStyle(Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold),
-                modifier = Modifier.padding(bottom = 30.dp),
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.Bottom) {
-                sources.forEachIndexed { index, source ->
-                    LiveSourceTile(
-                        source = source,
-                        isFocused = focusedIndex == index && menuForId == null,
-                        isCurrent = source.id == currentId,
-                        onClick = { onSelect(source.id); onDismiss() },
-                        onMenu = { menuForId = source.id },
-                        onBack = { if (menuForId != null) menuForId = null else onDismiss() },
-                        onFocusChange = { if (it) { focusedIndex = index; Sounds.focusMoved() } },
-                        focusRequester = focusRequesters[index],
-                    )
-                }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(gridGap),
+            modifier = Modifier.padding(bottom = 80.dp).padding(horizontal = gridMargin),
+        ) {
+            sources.forEachIndexed { index, source ->
+                LiveSourceTile(
+                    source = source,
+                    tileW = tileW,
+                    tileH = tileH,
+                    isFocused = focusedIndex == index && menuForId == null,
+                    isCurrent = source.id == currentId,
+                    onClick = { onSelect(source.id); onDismiss() },
+                    onMenu = { menuForId = source.id },
+                    onBack = { if (menuForId != null) menuForId = null else onDismiss() },
+                    onFocusChange = { if (it) { focusedIndex = index; Sounds.focusMoved() } },
+                    focusRequester = focusRequesters[index],
+                )
             }
         }
         if (menuForId != null) {
@@ -142,6 +146,8 @@ private fun MenuItem(text: String, color: Color = Color.White, onClick: () -> Un
 @Composable
 private fun LiveSourceTile(
     source: LiveSource,
+    tileW: androidx.compose.ui.unit.Dp,
+    tileH: androidx.compose.ui.unit.Dp,
     isFocused: Boolean,
     isCurrent: Boolean,
     onClick: () -> Unit,
@@ -150,7 +156,6 @@ private fun LiveSourceTile(
     onFocusChange: (Boolean) -> Unit,
     focusRequester: FocusRequester,
 ) {
-    val tileSize = 150.dp
     val scale by animateFloatAsState(if (isFocused) 1.1f else 1f, spring(0.86f, 300f), label = "scale")
     val bgColor = tileColors[source.colorIndex % tileColors.size]
 
@@ -174,15 +179,15 @@ private fun LiveSourceTile(
     ) {
         Box(
             modifier = Modifier
-                .size(tileSize)
+                .width(tileW)
+                .height(tileH)
                 .clip(RoundedCornerShape(28.dp))
-                .background(bgColor)
-                .border(if (isFocused) 3.dp else 0.dp, Color.White, RoundedCornerShape(28.dp)),
+                .background(bgColor),
             contentAlignment = Alignment.Center,
         ) {
             BasicText(
                 if (isCurrent) "▶" else source.name.take(1),
-                style = TextStyle(Color.White, fontSize = 50.sp, fontWeight = FontWeight.Bold),
+                style = TextStyle(Color.White, fontSize = 48.sp, fontWeight = FontWeight.Bold),
             )
         }
         BasicText(
@@ -190,10 +195,10 @@ private fun LiveSourceTile(
             style = TextStyle(
                 color = Color.White,
                 textAlign = TextAlign.Center,
-                fontSize = 16.sp,
+                fontSize = 15.sp,
                 fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
             ),
-            modifier = Modifier.padding(top = 12.dp),
+            modifier = Modifier.padding(top = 10.dp),
         )
     }
 }
