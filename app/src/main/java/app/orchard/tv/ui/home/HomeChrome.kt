@@ -730,30 +730,59 @@ fun CornerClock(now: LocalDateTime, modifier: Modifier = Modifier, toSaver: () -
         alpha = 1f - (toSaver() * 2.5f).coerceIn(0f, 1f)
         compositingStrategy = CompositingStrategy.ModulateAlpha
     }
+    val lunar = if (Locale.getDefault().language == "zh") Lunar.text(now.toLocalDate()) else null
+    val dateStr = remember(now) {
+        SimpleDateFormat("yyyy年M月d日", Locale.getDefault()).format(Date(
+            now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()))
+    }
+    val weekday = remember(now) {
+        SimpleDateFormat("EEEE", Locale.getDefault()).format(Date(
+            now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()))
+    }
     Column(modifier, horizontalAlignment = Alignment.Start) {
-        Row(modifier = aside, verticalAlignment = Alignment.CenterVertically) {
+        BasicText(
+            greetingText(now.hour),
+            style = Type.Headline.copy(color = dim, shadow = shadow, fontSize = Type.SmallClock.fontSize),
+            modifier = aside,
+        )
+        Row(
+            modifier = Modifier.padding(top = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             BasicText(
                 timeText(now),
                 style = Type.SmallClock.copy(fontSize = Type.Title.fontSize, color = dim, shadow = shadow),
                 modifier = Modifier.toSaverClock(toSaver, Type.Title.fontSize, Type.Title.fontSize.value.dp * CAP_TOP, drift),
             )
-            Spacer(Modifier.width(8.dp))
-            BasicText(greetingText(now.hour), style = Type.Headline.copy(color = dim, shadow = shadow))
-        }
-        BasicText(
-            dateText(now),
-            style = Type.Headline.copy(color = dim, shadow = shadow),
-            modifier = aside.padding(top = 4.dp),
-        )
-        Weather.now?.takeIf { AerialSettings.showWeather }?.let { w ->
-            val place = Weather.place
-            val cond = stringResource(conditionName(w.kind))
-            val temp = if (w.high != null && w.low != null) "${w.low}° ~ ${w.high}°" else "${w.celsius}°"
-            BasicText(
-                listOfNotNull(place, cond, temp).joinToString(" "),
-                style = Type.Headline.copy(color = dim, shadow = shadow),
-                modifier = aside.padding(top = 4.dp),
+            Spacer(Modifier.width(12.dp))
+            Box(
+                Modifier
+                    .width(1.5.dp)
+                    .height(IntrinsicSize.Max)
+                    .background(Color.White.copy(alpha = 0.4f))
             )
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = aside) {
+                Weather.now?.takeIf { AerialSettings.showWeather }?.let { w ->
+                    val place = Weather.place
+                    val cond = stringResource(conditionName(w.kind))
+                    val temp = if (w.high != null && w.low != null) "${w.low}℃ ~ ${w.high}℃" else "${w.celsius}℃"
+                    BasicText(
+                        listOfNotNull(place, cond, temp).joinToString(" "),
+                        style = Type.Headline.copy(color = dim, shadow = shadow),
+                    )
+                }
+                BasicText(
+                    dateStr,
+                    style = Type.Headline.copy(color = dim, shadow = shadow),
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+                BasicText(
+                    if (lunar != null) "$weekday $lunar" else weekday,
+                    style = Type.Headline.copy(color = dim, shadow = shadow),
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
         }
     }
 }
