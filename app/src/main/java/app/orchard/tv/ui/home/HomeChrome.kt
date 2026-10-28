@@ -741,28 +741,32 @@ fun CornerClock(now: LocalDateTime, modifier: Modifier = Modifier, toSaver: () -
             now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()))
     }
     Column(modifier, horizontalAlignment = Alignment.Start) {
+        // 问候语（小字号）
         BasicText(
             greetingText(now.hour),
-            style = Type.Headline.copy(color = dim, shadow = shadow, fontSize = Type.SmallClock.fontSize),
+            style = Type.Headline.copy(color = dim, shadow = shadow),
             modifier = aside,
         )
         Row(
-            modifier = Modifier.padding(top = 4.dp),
+            modifier = Modifier.padding(top = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // 左边：大时间（48sp，字高约等于右侧三行总高度）
             BasicText(
                 timeText(now),
-                style = Type.SmallClock.copy(fontSize = Type.Title.fontSize, color = dim, shadow = shadow),
-                modifier = Modifier.toSaverClock(toSaver, Type.Title.fontSize, Type.Title.fontSize.value.dp * CAP_TOP, drift),
+                style = Type.SmallClock.copy(fontSize = 48.sp, color = dim, shadow = shadow),
+                modifier = Modifier.toSaverClock(toSaver, 48.sp, 48.sp.value.dp * CAP_TOP, drift),
             )
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(14.dp))
+            // 竖线（贯穿右侧三行高度）
             Box(
                 Modifier
                     .width(1.5.dp)
                     .height(IntrinsicSize.Max)
-                    .background(Color.White.copy(alpha = 0.4f))
+                    .background(Color.White.copy(alpha = 0.5f))
             )
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(14.dp))
+            // 右边三行（中字号）
             Column(modifier = aside) {
                 Weather.now?.takeIf { AerialSettings.showWeather }?.let { w ->
                     val place = Weather.place
@@ -776,12 +780,12 @@ fun CornerClock(now: LocalDateTime, modifier: Modifier = Modifier, toSaver: () -
                 BasicText(
                     dateStr,
                     style = Type.Headline.copy(color = dim, shadow = shadow),
-                    modifier = Modifier.padding(top = 2.dp),
+                    modifier = Modifier.padding(top = 3.dp),
                 )
                 BasicText(
                     if (lunar != null) "$weekday $lunar" else weekday,
                     style = Type.Headline.copy(color = dim, shadow = shadow),
-                    modifier = Modifier.padding(top = 2.dp),
+                    modifier = Modifier.padding(top = 3.dp),
                 )
             }
         }
