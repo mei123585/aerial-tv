@@ -233,7 +233,8 @@ fun HomeScreen(
     var uiHidden by remember { mutableStateOf(false) }
     var lastKeyTime by remember { mutableStateOf(0L) }
     val focusedPkg = apps.getOrNull(focusedIndex)?.packageName ?: ""
-    val channelPreviewVisible = focusedPkg == "com.jxiptv.softconsole" &&
+    val channelPreviewVisible = AerialSettings.livePreviewEnabled &&
+        focusedPkg == "com.jxiptv.softconsole" &&
         focusedRow == 0 &&
         !vm.screensaverVisible && moving == null
     LaunchedEffect(channelPreviewVisible) { vm.livePlaying = channelPreviewVisible }
