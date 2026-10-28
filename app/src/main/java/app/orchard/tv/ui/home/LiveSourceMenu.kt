@@ -116,8 +116,10 @@ private fun LiveSourceCard(
             .onKeyEvent { e ->
                 if (e.type == KeyEventType.KeyDown) {
                     // 撞边音效
-                    if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_LEFT && isFirst) { Sounds.limit(); return@onKeyEvent true }
-                    if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_RIGHT && isLast) { Sounds.limit(); return@onKeyEvent true }
+                    if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_LEFT && isFirst && e.nativeKeyEvent.repeatCount == 0) { Sounds.limit(); return@onKeyEvent true }
+                    if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_RIGHT && isLast && e.nativeKeyEvent.repeatCount == 0) { Sounds.limit(); return@onKeyEvent true }
+                    if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_LEFT && isFirst) return@onKeyEvent true
+                    if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_RIGHT && isLast) return@onKeyEvent true
                 }
                 if ((e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_CENTER ||
                             e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_ENTER) &&
