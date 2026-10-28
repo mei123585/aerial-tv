@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -42,6 +41,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.orchard.tv.LiveSource
 import app.orchard.tv.system.Sounds
+import app.orchard.tv.ui.components.liquidGlass
+import app.orchard.tv.ui.theme.Glyph
 
 private val tileColors = listOf(
     Color(0xFFD32F2F), Color(0xFF1976D2), Color(0xFF388E3C), Color(0xFFF57C00),
@@ -69,7 +70,6 @@ fun LiveSourceMenu(
         focusRequesters.getOrNull(currentIndex)?.requestFocus()
     }
 
-    // 和一级菜单一样的布局参数
     val screenW = LocalConfiguration.current.screenWidthDp.dp
     val gridMargin = 56.dp
     val gridGap = 28.dp
@@ -102,44 +102,25 @@ fun LiveSourceMenu(
         }
         if (menuForId != null) {
             val source = sources.find { it.id == menuForId } ?: return@Box
-            Box(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .width(280.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Color(0xFF2A2A2A))
-                    .padding(16.dp),
+            val first = remember { FocusRequester() }
+            LaunchedEffect(menuForId) { first.requestFocus() }
+            Column(
+                Modifier
+                    .width(250.dp)
+                    .liquidGlass(20.dp)
+                    .padding(8.dp)
+                    .align(Alignment.Center),
             ) {
-                Column {
-                    BasicText(source.name, style = TextStyle(Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold), modifier = Modifier.padding(bottom = 12.dp))
-                    MenuItem("重命名") { onRename(source.id); menuForId = null }
-                    MenuItem("编辑地址") { onEditUrl(source.id); menuForId = null }
-                    if (!source.isPreset) {
-                        MenuItem("删除", Color(0xFFFF5252)) { onDelete(source.id); menuForId = null }
-                    }
-                    MenuItem("取消") { menuForId = null }
+                BasicText(source.name, style = TextStyle(Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold),
+                    modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 6.dp))
+                MenuRow(Glyph.Pencil, "重命名", { onRename(source.id); menuForId = null }, focusRequester = first)
+                MenuRow(Glyph.Globe, "编辑地址", { onEditUrl(source.id); menuForId = null })
+                if (!source.isPreset) {
+                    MenuRow(Glyph.Trash, "删除", { onDelete(source.id); menuForId = null }, destructive = true)
                 }
+                MenuRow(Glyph.Move, "取消", { menuForId = null })
             }
         }
-    }
-}
-
-@Composable
-private fun MenuItem(text: String, color: Color = Color.White, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .focusable()
-            .onFocusChanged { if (it.isFocused) Sounds.focusMoved() }
-            .onKeyEvent { e ->
-                if ((e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_CENTER || e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_ENTER) && e.type == KeyEventType.KeyUp) {
-                    Sounds.select(); onClick(); true
-                } else false
-            }
-            .padding(vertical = 12.dp, horizontal = 16.dp),
-    ) {
-        BasicText(text, style = TextStyle(color, fontSize = 15.sp))
     }
 }
 
