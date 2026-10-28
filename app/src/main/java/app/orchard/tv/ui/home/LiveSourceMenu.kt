@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.orchard.tv.LiveSource
+import app.orchard.tv.system.Sounds
 
 @Composable
 fun LiveSourceMenu(
@@ -66,11 +67,13 @@ fun LiveSourceMenu(
                 LiveSourceCard(
                     source = source,
                     isFocused = focusedIndex == index,
+                    isFirst = index == 0,
+                    isLast = index == sources.size - 1,
                     onClick = {
                         if (index == 4 && source.url.isBlank()) showInputDialog = true
                         else { onSelect(index); onDismiss() }
                     },
-                    onFocusChange = { if (it) focusedIndex = index },
+                    onFocusChange = { if (it) { focusedIndex = index; Sounds.focusMoved() } },
                     focusRequester = focusRequesters[index],
                 )
             }
