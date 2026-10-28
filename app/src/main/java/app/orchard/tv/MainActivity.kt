@@ -492,6 +492,11 @@ class MainActivity : ComponentActivity() {
      * starts nothing on the timer, and Back starts the firmware's.
      */
     private fun startScreensaver(asked: Boolean) {
+        // 直播播放中不自动启动屏保
+        if (!asked && vm.livePlaying) {
+            restartIdleTimer()
+            return
+        }
         AerialSettings.relock()
         if (Wallpapers.screensaver == ScreensaverMode.System) {
             if (asked && !SystemScreensaver.startFirmware(this)) DiagLog.i("no system screensaver to start")
