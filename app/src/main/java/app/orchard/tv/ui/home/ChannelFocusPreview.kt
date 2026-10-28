@@ -76,9 +76,12 @@ fun ChannelFocusPreview(
             when (e) {
                 Lifecycle.Event.ON_STOP -> { player?.pause(); player?.volume = 0f }
                 Lifecycle.Event.ON_START -> {
-                    player?.playWhenReady = true
-                    player?.volume = 1f
-                    player?.seekToDefaultPosition() // 回到桌面时跳到直播最新位置
+                    player?.let {
+                        it.playWhenReady = true
+                        it.volume = 1f
+                        it.prepare()
+                        it.seekToDefaultPosition()
+                    }
                 }
                 else -> {}
             }
