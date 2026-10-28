@@ -140,6 +140,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     /** Aerial's screensaver is up (see MainActivity's idle timer). */
     var screensaverVisible by mutableStateOf(false)
     val screensaverSkips = ScreensaverSkips()
+    var livePlaying by mutableStateOf(false)
 
     // ===== 新增：直播源管理 =====
     val presetLiveSources = listOf(
