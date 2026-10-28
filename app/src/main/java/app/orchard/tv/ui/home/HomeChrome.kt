@@ -588,20 +588,13 @@ fun ShelfClock(
     now: LocalDateTime,
     modifier: Modifier = Modifier,
     alignEnd: Boolean = false,
-    /** How far the time has moved to the screensaver's place ([toSaverClock]); the date and weather go. */
     toSaver: () -> Float = { 0f },
-    /** The screensaver is up over Home, carrying this clock: it wanders as the screensaver's does. */
     saving: Boolean = false,
-    /** The screensaver is carrying Home's wallpaper on: the date and weather go before the time moves. */
     away: Boolean = false,
 ) {
     val drift = heldDrift(saving, now)
     val shadow = Shadow(Color.Black.copy(alpha = 0.28f), Offset(0f, 2f), blurRadius = 18f)
     val dim = Color.White.copy(alpha = 0.72f)
-    // Gone in the first 400 ms, while the time has barely set off (its 2 s ease-in-out). Fading
-    // along its progress (1.52), they were still there as the time rose through the date, and over
-    // a moving film, at 8-10 frames a second on Xiaomi MiTV-MFTR0, they read as cut away in steps.
-    // Back on Home they return once the time is nearly in place (CLOCK_BACK_MS), as they went.
     val reduced = LocalReducedMotion.current
     val asideGone by animateFloatAsState(
         if (away) 1f else 0f,
@@ -610,47 +603,71 @@ fun ShelfClock(
     )
     val aside = Modifier.graphicsLayer {
         alpha = 1f - asideGone
-        // No offscreen buffer: it would be the line's capBox, and while the line faded the Chinese,
-        // the icon and the shadow above and below it were cut off, the whole line springing open
-        // as the fade ended (the owner, Xiaomi MiTV-MFTR0).
         compositingStrategy = CompositingStrategy.ModulateAlpha
     }
     Column(modifier, horizontalAlignment = if (alignEnd) Alignment.End else Alignment.Start) {
-        // On a TV set to Chinese, the Chinese calendar's date follows, as on the iPhone's lock screen.
-        val lunar = if (Locale.getDefault().language == "zh") Lunar.text(now.toLocalDate()) else null
+        // 问候语
         BasicText(
-            buildAnnotatedString {
-                append(dateText(now))
-                if (lunar != null) withStyle(SpanStyle(color = dim, fontWeight = FontWeight.W500)) { append("  $lunar") }
-            },
+            greetingText(now.hour),
             style = Type.ClockDate.copy(shadow = shadow),
             modifier = aside.capBox(Type.ClockDate.fontSize),
         )
-        BasicText(
-            timeText(now),
-            style = Type.Clock.copy(shadow = shadow),
-            modifier = Modifier.padding(top = 16.dp)
-                .toSaverClock(toSaver, Type.Clock.fontSize, 0.dp, drift)
-                .capBox(Type.Clock.fontSize),
-        )
-        Weather.now?.takeIf { AerialSettings.showWeather }?.let { w ->
-            val place = Weather.place?.takeIf { it.length <= 12 }
-            val range = if (w.high != null && w.low != null) stringResource(R.string.weather_high_low, w.high, w.low) else null
-            val detail = listOfNotNull(place, stringResource(conditionName(w.kind)), range).joinToString(" · ")
-            Row(aside.padding(top = 18.dp).capBox(Type.ClockDetail.fontSize), verticalAlignment = Alignment.CenterVertically) {
-                GlyphIcon(glyphFor(w), Color.White, 18.dp, Modifier.padding(end = 7.dp))
-                BasicText(
-                    buildAnnotatedString {
-                        append("${w.celsius}°")
-                        withStyle(SpanStyle(color = dim, fontWeight = FontWeight.W500)) { append("  $detail") }
-                    },
-                    style = Type.ClockDetail.copy(shadow = shadow),
+        Row(
+            modifier = Modifier.padding(top = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BasicText(
+                timeText(now),
+                style = Type.Clock.copy(shadow = shadow),
+                modifier = Modifier
+                    .toSaverClock(toSaver, Type.Clock.fontSize, 0.dp, drift)
+                    .capBox(Type.Clock.fontSize),
+            )
+            Spacer(Modifier.width(20.dp))
+            Row(
+                modifier = aside,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    Modifier
+                        .width(2.dp)
+                        .height(IntrinsicSize.Max)
+                        .background(Color.White.copy(alpha = 0.4f))
                 )
+                Spacer(Modifier.width(16.dp))
+                Column {
+                    Weather.now?.takeIf { AerialSettings.showWeather }?.let { w ->
+                        val place = Weather.place
+                        val cond = stringResource(conditionName(w.kind))
+                        val temp = if (w.high != null && w.low != null) "${w.low}℃~${w.high}℃" else "${w.celsius}℃"
+                        BasicText(
+                            listOfNotNull(place, cond, temp).joinToString(" "),
+                            style = Type.ClockDate.copy(shadow = shadow),
+                        )
+                    }
+                    BasicText(
+                        buildAnnotatedString {
+                            append(dateText(now))
+                            val lunar = if (Locale.getDefault().language == "zh") Lunar.text(now.toLocalDate()) else null
+                            if (lunar != null) withStyle(SpanStyle(color = dim, fontWeight = FontWeight.W500)) { append("  $lunar") }
+                        },
+                        style = Type.ClockDate.copy(shadow = shadow),
+                        modifier = Modifier.padding(top = if (Weather.now?.takeIf { AerialSettings.showWeather } != null) 6.dp else 0.dp),
+                    )
+                }
             }
         }
     }
 }
 
+private fun greetingText(hour: Int): String = when (hour) {
+    in 0..5 -> "晚上好"
+    in 6..8 -> "早上好"
+    in 9..11 -> "上午好"
+    in 12 -> "中午好"
+    in 13..17 -> "下午好"
+    else -> "晚上好"
+}
 /**
  * How far the clock has wandered with the screensaver ([saverDrift]), held once it ends: the time
  * goes back from where it was, the wander shrinking with the rest of the way ([toSaverClock]).
