@@ -818,7 +818,7 @@ val target = with(density) { metrics.scrollFor(if (inGrid) focusedRow else 0, ro
                 .graphicsLayer {
                     alpha = when {
                         overlay is Overlay.ControlCenter -> 0f
-                        uiHidden && focusedPkg == "com.jxiptv.softconsole" && overlay == Overlay.None -> 0f
+                        uiHidden && focusedPkg == "com.jxiptv.softconsole" -> 0f
                         else -> 1f
                     }
                 },
