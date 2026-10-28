@@ -88,29 +88,31 @@ fun LiveSourceMenu(
         focusRequesters.getOrNull(currentIndex)?.requestFocus()
     }
 
-    val screenW = LocalConfiguration.current.screenWidthDp.dp
     val gridMargin = 56.dp
     val gridGap = 28.dp
     val columns = 5
-    val tileW = (screenW - gridMargin * 2 - gridGap * (columns - 1)) / columns
-    val tileH = tileW * 9f / 16f
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .onKeyEvent { e ->
-                if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_MENU && e.type == KeyEventType.KeyUp && menuForId == null && editMode == null) {
-                    sources.getOrNull(focusedIndex)?.let { menuForId = it.id }
-                    true
-                } else false
-            },
-        contentAlignment = Alignment.BottomCenter,
+    androidx.compose.foundation.layout.BoxWithConstraints(
+        modifier = Modifier.fillMaxSize(),
     ) {
-        androidx.compose.foundation.layout.FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(gridGap, Alignment.CenterHorizontally),
-            verticalArrangement = Arrangement.spacedBy(50.dp, Alignment.CenterVertically),
-            modifier = Modifier.padding(bottom = 80.dp).fillMaxWidth().padding(horizontal = gridMargin),
+        val screenW = maxWidth
+        val tileW = (screenW - gridMargin * 2 - gridGap * (columns - 1)) / columns
+        val tileH = tileW * 9f / 16f
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .onKeyEvent { e ->
+                    if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_MENU && e.type == KeyEventType.KeyUp && menuForId == null && editMode == null) {
+                        sources.getOrNull(focusedIndex)?.let { menuForId = it.id }
+                        true
+                    } else false
+                },
+            contentAlignment = Alignment.BottomCenter,
         ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(gridGap, Alignment.CenterHorizontally),
+                modifier = Modifier.padding(bottom = 80.dp).fillMaxWidth().padding(horizontal = gridMargin),
+            ) {
             sources.forEachIndexed { index, source ->
                 val app = remember(source.id, source.name) { liveSourceAppEntry(source) }
                 AppTile(
@@ -160,6 +162,7 @@ fun LiveSourceMenu(
                 },
                 onDismiss = { editMode = null },
             )
+        }
         }
     }
 }
