@@ -625,14 +625,14 @@ fun ShelfClock(
         )
         Weather.now?.takeIf { AerialSettings.showWeather }?.let { w ->
             val place = Weather.place?.takeIf { it.length <= 12 }
-            val range = if (w.high != null && w.low != null) "${w.low}°~${w.high}°" else null
-            val detail = listOfNotNull(place, stringResource(conditionName(w.kind)), range).joinToString("·")
+            val range = if (w.high != null && w.low != null) "${w.low}° ~ ${w.high}°" else null
+            val detail = listOfNotNull(place, stringResource(conditionName(w.kind)), range).joinToString(" · ")
             Row(aside.padding(top = 18.dp).capBox(Type.ClockDetail.fontSize), verticalAlignment = Alignment.CenterVertically) {
                 GlyphIcon(glyphFor(w), Color.White, 18.dp, Modifier.padding(end = 7.dp))
                 BasicText(
                     buildAnnotatedString {
                         append("${w.celsius}°")
-                        if (!detail.isNullOrBlank()) withStyle(SpanStyle(color = dim, fontWeight = FontWeight.W500)) { append(" $detail") }
+                        if (detail.isNotEmpty()) withStyle(SpanStyle(color = dim, fontWeight = FontWeight.W500)) { append("  $detail") }
                     },
                     style = Type.ClockDetail.copy(shadow = shadow),
                 )
@@ -733,27 +733,17 @@ fun CornerClock(now: LocalDateTime, modifier: Modifier = Modifier, toSaver: () -
     }
     val lunar = if (Locale.getDefault().language == "zh") Lunar.text(now.toLocalDate()) else null
     val dateStr = remember(now) {
-        SimpleDateFormat("M月d日", Locale.getDefault()).format(Date(
-            now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()))
-    }
-    val weekday = remember(now) {
-        SimpleDateFormat("EEEE", Locale.getDefault()).format(Date(
+        SimpleDateFormat("M月d日 EEE", Locale.CHINA).format(Date(
             now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()))
     }
     Column(
         modifier = modifier.then(aside),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalAlignment = Alignment.Start,
     ) {
-        // 第一行：问候语+感叹号 + 日期星期农历
         BasicText(
-            buildString {
-                append(greetingText(now.hour) + "！")
-                append("  $dateStr $weekday")
-                if (lunar != null) append(" $lunar")
-            },
+            greetingText(now.hour) + "！",
             style = Type.Headline.copy(color = dim, shadow = shadow),
         )
-        // 第二行：大时间
         BasicText(
             timeText(now),
             style = Type.SmallClock.copy(fontSize = 48.sp, color = dim, shadow = shadow),
@@ -761,11 +751,18 @@ fun CornerClock(now: LocalDateTime, modifier: Modifier = Modifier, toSaver: () -
                 .padding(top = 2.dp)
                 .toSaverClock(toSaver, 48.sp, 48.sp.value.dp * CAP_TOP, drift),
         )
-        // 第三行：天气图标 + 当前温度 + 详细天气
+        BasicText(
+            buildString {
+                append(dateStr)
+                if (lunar != null) append(" $lunar")
+            },
+            style = Type.Headline.copy(color = dim, shadow = shadow),
+            modifier = Modifier.padding(top = 2.dp),
+        )
         Weather.now?.takeIf { AerialSettings.showWeather }?.let { w ->
             val place = Weather.place
             val cond = stringResource(conditionName(w.kind))
-            val range = if (w.high != null && w.low != null) "${w.low}℃~${w.high}℃" else ""
+            val range = if (w.high != null && w.low != null) "${w.low}° ~ ${w.high}°" else ""
             Row(
                 modifier = Modifier.padding(top = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -773,10 +770,9 @@ fun CornerClock(now: LocalDateTime, modifier: Modifier = Modifier, toSaver: () -
                 GlyphIcon(glyphFor(w), dim, 16.dp, Modifier.padding(end = 6.dp))
                 BasicText(
                     buildString {
-                        append("${w.celsius}℃")
-                        if (!place.isNullOrBlank() || range.isNotEmpty()) {
-                            append("  ${listOfNotNull(place, cond, range).joinToString("·")}")
-                        }
+                        append("${w.celsius}°")
+                        val detail = listOfNotNull(place, cond, range).filter { it.isNotEmpty() }.joinToString(" · ")
+                        if (detail.isNotEmpty()) append("  $detail")
                     },
                     style = Type.Headline.copy(color = dim, shadow = shadow),
                 )
