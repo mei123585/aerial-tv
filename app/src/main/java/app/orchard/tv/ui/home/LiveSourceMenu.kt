@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -144,6 +145,7 @@ private fun LiveSourceTile(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .scale(scale)
+            .graphicsLayer { shadowElevation = if (isFocused) 20f else 8f }
             .focusRequester(focusRequester)
             .onFocusChanged { onFocusChange(it.isFocused) }
             .focusable()
