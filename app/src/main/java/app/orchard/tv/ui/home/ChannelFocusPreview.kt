@@ -119,13 +119,15 @@ private fun extractRoomIdFromUrl(url: String): Long? =
     Regex("live\\.bilibili\\.com/(\\d+)").find(url)?.groupValues?.getOrNull(1)?.toLongOrNull()
 
 private fun fetchBilibiliHlsUrl(roomId: Long): String? = runCatching {
-    val api = "https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo?room_id=$roomId&protocol=0,1&format=0,1,2&codec=0&qn=250&platform=web"
+    val api = "https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo?room_id=$roomId&protocol=0,1&format=0,1,2&codec=0&qn=1000&platform=web"
     val c = java.net.URL(api).openConnection() as java.net.HttpURLConnection
     c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36")
     c.setRequestProperty("Referer", "https://live.bilibili.com/")
     c.connectTimeout = 10000; c.readTimeout = 10000
     val body = c.inputStream.bufferedReader().readText(); c.disconnect()
     val streams = JSONObject(body).getJSONObject("data").getJSONObject("playurl_info").getJSONObject("playurl").getJSONArray("stream")
+    data class StreamItem(val qn: Int, val url: String)
+    val candidates = mutableListOf<StreamItem>()
     for (i in 0 until streams.length()) {
         val s = streams.getJSONObject(i); if (s.optString("protocol_name") != "http_hls") continue
         val fmts = s.getJSONArray("format")
@@ -135,8 +137,11 @@ private fun fetchBilibiliHlsUrl(roomId: Long): String? = runCatching {
             for (k in 0 until codecs.length()) {
                 val codec = codecs.getJSONObject(k)
                 val ui = codec.getJSONArray("url_info").getJSONObject(0)
-                return ui.getString("host") + codec.getString("base_url") + ui.getString("extra")
+                val url = ui.getString("host") + codec.getString("base_url") + ui.getString("extra")
+                val qn = codec.optInt("current_qn", 0)
+                candidates.add(StreamItem(qn, url))
             }
         }
-    }; null
+    }
+    candidates.maxByOrNull { it.qn }?.url
 }.getOrNull()
