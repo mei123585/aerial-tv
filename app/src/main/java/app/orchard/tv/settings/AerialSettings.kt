@@ -62,6 +62,7 @@ object AerialSettings {
     private lateinit var app: Context
 
     var focusStyle by mutableStateOf(FocusStyle.HighContrast); private set
+    var livePreviewEnabled by mutableStateOf(true); private set
 
 
     /** TV inputs pinned to Home as tiles, by TvInputInfo id. */
