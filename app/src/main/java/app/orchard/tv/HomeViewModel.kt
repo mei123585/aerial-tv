@@ -209,6 +209,20 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         saveCustomList()
     }
 
+    fun moveLiveSource(from: Int, to: Int) {
+        if (from !in liveSources.indices || to !in liveSources.indices) return
+        val list = liveSources.toMutableList()
+        val item = list.removeAt(from)
+        list.add(to, item)
+        liveSources = list
+        saveCustomList()
+    }
+
+    fun hideLiveSource(id: String) {
+        // 隐藏=从列表移除，预设源不能隐藏
+        removeLiveSource(id)
+    }
+
     fun renameLiveSource(id: String, newName: String) {
         liveSources = liveSources.map {
             if (it.id == id) it.copy(name = newName.ifBlank { it.name }) else it

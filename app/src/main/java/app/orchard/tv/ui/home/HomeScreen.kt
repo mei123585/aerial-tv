@@ -1037,8 +1037,8 @@ val target = with(density) { metrics.scrollFor(if (inGrid) focusedRow else 0, ro
             sources = vm.getAllLiveSources(),
             currentId = vm.currentLiveSourceId,
             onSelect = { vm.selectLiveSource(it); vm.overlay = Overlay.None },
-            onRename = { id, name -> vm.renameLiveSource(id, name) },
-            onEditUrl = { id, url -> vm.updateLiveSourceUrl(id, url) },
+            onMove = { from, to -> vm.moveLiveSource(from, to) },
+            onHide = { vm.hideLiveSource(it) },
             onDelete = { vm.removeLiveSource(it) },
             onDismiss = { vm.overlay = Overlay.None },
         )

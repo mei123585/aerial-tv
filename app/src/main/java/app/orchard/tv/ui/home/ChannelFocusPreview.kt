@@ -43,7 +43,13 @@ fun ChannelFocusPreview(
         player = null
         if (source == null) return@LaunchedEffect
 
-        val streamUrl = withContext(Dispatchers.IO) { resolveStreamUrl(source) }
+        // 重试：开机时可能没网，联网后自动恢复
+        var streamUrl: String? = null
+        for (attempt in 1..10) {
+            streamUrl = withContext(Dispatchers.IO) { resolveStreamUrl(source) }
+            if (streamUrl != null) break
+            kotlinx.coroutines.delay(3000)
+        }
         DiagLog.i("channel preview: url = $streamUrl")
         if (streamUrl != null) {
             val trackSelector = androidx.media3.exoplayer.trackselection.DefaultTrackSelector(context).apply {
