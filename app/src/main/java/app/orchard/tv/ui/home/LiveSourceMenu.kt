@@ -182,7 +182,7 @@ private fun TextEditDialog(
     var text by remember { mutableStateOf(initial) }
     val confirmRequester = remember { FocusRequester() }
     Box(
-        modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)).onPreviewKeyEvent { false },
+        modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)),
         contentAlignment = Alignment.Center,
     ) {
         Column(
