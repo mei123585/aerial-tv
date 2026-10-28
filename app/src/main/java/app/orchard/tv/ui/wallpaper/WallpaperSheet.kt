@@ -214,8 +214,8 @@ fun WallpaperSheet(
                     Spacer(Modifier.height(10.dp))
                     Group { note ->
                         Choices(
-                            "直播预览",
-                            "焦点选中IPTV应用时背景播放相关直播",
+                            R.string.st_live_preview,
+                            "焦点选中IPTV时背景播放CCTV13直播",
                             note,
                             listOf(true to R.string.st_on, false to R.string.st_off),
                             AerialSettings.livePreviewEnabled, AerialSettings::chooseLivePreview,
