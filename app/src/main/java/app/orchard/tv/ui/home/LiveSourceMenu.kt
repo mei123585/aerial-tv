@@ -106,9 +106,10 @@ fun LiveSourceMenu(
             },
         contentAlignment = Alignment.BottomCenter,
     ) {
-        Row(
+        androidx.compose.foundation.layout.FlowRow(
             horizontalArrangement = Arrangement.spacedBy(gridGap, Alignment.CenterHorizontally),
-            modifier = Modifier.padding(bottom = 80.dp).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(50.dp, Alignment.CenterVertically),
+            modifier = Modifier.padding(bottom = 80.dp).fillMaxWidth().padding(horizontal = gridMargin),
         ) {
             sources.forEachIndexed { index, source ->
                 val app = remember(source.id, source.name) { liveSourceAppEntry(source) }
