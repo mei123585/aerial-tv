@@ -722,7 +722,6 @@ private fun conditionName(kind: WeatherKind): Int = when (kind) {
  * pill, so the wallpaper keeps the rest of the screen. A soft shadow keeps it readable on photos.
  */
 @Composable
-@Composable
 fun CornerClock(now: LocalDateTime, modifier: Modifier = Modifier, toSaver: () -> Float = { 0f }, saving: Boolean = false) {
     val drift = heldDrift(saving, now)
     val dim = Color.White.copy(alpha = 0.92f)
