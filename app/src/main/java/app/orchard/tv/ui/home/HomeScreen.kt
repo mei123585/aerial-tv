@@ -233,10 +233,10 @@ fun HomeScreen(
     var uiHidden by remember { mutableStateOf(false) }
     var lastKeyTime by remember { mutableStateOf(0L) }
     val focusedPkg = apps.getOrNull(focusedIndex)?.packageName ?: ""
-    val channelPreviewVisible = focusedPkg == "com.jxiptv.softconsole" &&
+    val channelPreviewVisible = !pillFocused &&
+        focusedPkg == "com.jxiptv.softconsole" &&
         focusedRow == 0 &&
         !vm.screensaverVisible && moving == null
-
     // 10秒无操作自动隐藏UI（一级和二级菜单都生效）
     LaunchedEffect(focusedPkg, overlay, uiHidden, lastKeyTime) {
         if (focusedPkg == "com.jxiptv.softconsole" && overlay == Overlay.None && !uiHidden) {
@@ -656,11 +656,12 @@ val target = with(density) { metrics.scrollFor(if (inGrid) focusedRow else 0, ro
             // GPU draws every tile again under the panel each frame. Lite there lets the clock and
             // the tiles fade out under the panel's veil; the wallpaper and plate stay.
             val shedUnderPanel = Build.VERSION.SDK_INT < Build.VERSION_CODES.N && AerialSettings.lite
-            // ===== 直播预览：壁纸之上、应用图标之下 =====
-            ChannelFocusPreview(
-                visible = channelPreviewVisible,
-                source = vm.getAllLiveSources().getOrNull(vm.currentLiveSourceIndex),
-            )
+            // ===== 直播预览：只在焦点选中第一排目标应用时才组合 =====
+            if (channelPreviewVisible) {
+                ChannelFocusPreview(
+                    source = vm.getAllLiveSources().getOrNull(vm.currentLiveSourceIndex),
+                )
+            }
             Box(
                 Modifier
                     .fillMaxSize()
