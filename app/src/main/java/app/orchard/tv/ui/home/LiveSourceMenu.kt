@@ -11,19 +11,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -45,8 +43,7 @@ import androidx.compose.ui.unit.sp
 import app.orchard.tv.LiveSource
 import app.orchard.tv.system.Sounds
 
-// 预设源的配色
-private val presetColors = listOf(
+private val tileColors = listOf(
     Color(0xFFD32F2F), Color(0xFF1976D2), Color(0xFF388E3C), Color(0xFFF57C00),
     Color(0xFF7B1FA2), Color(0xFF00796B), Color(0xFF5D4037), Color(0xFF455A64),
 )
@@ -57,14 +54,16 @@ fun LiveSourceMenu(
     sources: List<LiveSource>,
     currentId: String,
     onSelect: (String) -> Unit,
+    onRename: (String) -> Unit,
+    onEditUrl: (String) -> Unit,
+    onDelete: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     if (!visible) return
     val currentIndex = sources.indexOfFirst { it.id == currentId }.coerceAtLeast(0)
     var focusedIndex by remember { mutableIntStateOf(currentIndex) }
+    var menuForId by remember { mutableStateOf<String?>(null) }
     val focusRequesters = remember { List(sources.size) { FocusRequester() } }
-    val gridState = rememberLazyGridState()
-
     LaunchedEffect(visible) {
         kotlinx.coroutines.delay(150)
         focusRequesters.getOrNull(currentIndex)?.requestFocus()
@@ -73,34 +72,70 @@ fun LiveSourceMenu(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.55f)),
-        contentAlignment = Alignment.Center,
+            .background(Color.Black.copy(alpha = 0.4f)),
+        contentAlignment = Alignment.BottomCenter,
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(bottom = 60.dp)) {
             BasicText(
                 "选择直播源",
-                style = TextStyle(Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold),
+                style = TextStyle(Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold),
                 modifier = Modifier.padding(bottom = 30.dp),
             )
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(4),
-                state = gridState,
-                horizontalArrangement = Arrangement.spacedBy(28.dp),
-                verticalArrangement = Arrangement.spacedBy(28.dp),
-                modifier = Modifier.padding(horizontal = 60.dp),
-            ) {
-                itemsIndexed(sources) { index, source ->
+            Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.Bottom) {
+                sources.forEachIndexed { index, source ->
                     LiveSourceTile(
                         source = source,
-                        isFocused = focusedIndex == index,
+                        isFocused = focusedIndex == index && menuForId == null,
                         isCurrent = source.id == currentId,
                         onClick = { onSelect(source.id); onDismiss() },
+                        onMenu = { menuForId = source.id },
+                        onBack = { if (menuForId != null) menuForId = null else onDismiss() },
                         onFocusChange = { if (it) { focusedIndex = index; Sounds.focusMoved() } },
                         focusRequester = focusRequesters[index],
                     )
                 }
             }
         }
+        if (menuForId != null) {
+            val source = sources.find { it.id == menuForId } ?: return@Box
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .width(280.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color(0xFF2A2A2A))
+                    .padding(16.dp),
+            ) {
+                Column {
+                    BasicText(source.name, style = TextStyle(Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold), modifier = Modifier.padding(bottom = 12.dp))
+                    MenuItem("重命名") { onRename(source.id); menuForId = null }
+                    MenuItem("编辑地址") { onEditUrl(source.id); menuForId = null }
+                    if (!source.isPreset) {
+                        MenuItem("删除", Color(0xFFFF5252)) { onDelete(source.id); menuForId = null }
+                    }
+                    MenuItem("取消") { menuForId = null }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MenuItem(text: String, color: Color = Color.White, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .focusable()
+            .onFocusChanged { if (it.isFocused) Sounds.focusMoved() }
+            .onKeyEvent { e ->
+                if ((e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_CENTER || e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_ENTER) && e.type == KeyEventType.KeyUp) {
+                    Sounds.select(); onClick(); true
+                } else false
+            }
+            .padding(vertical = 12.dp, horizontal = 16.dp),
+    ) {
+        BasicText(text, style = TextStyle(color, fontSize = 15.sp))
     }
 }
 
@@ -110,12 +145,14 @@ private fun LiveSourceTile(
     isFocused: Boolean,
     isCurrent: Boolean,
     onClick: () -> Unit,
+    onMenu: () -> Unit,
+    onBack: () -> Unit,
     onFocusChange: (Boolean) -> Unit,
     focusRequester: FocusRequester,
 ) {
-    val tileSize = 130.dp
+    val tileSize = 150.dp
     val scale by animateFloatAsState(if (isFocused) 1.1f else 1f, spring(0.86f, 300f), label = "scale")
-    val bgColor = presetColors[source.colorIndex % presetColors.size]
+    val bgColor = tileColors[source.colorIndex % tileColors.size]
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -125,13 +162,14 @@ private fun LiveSourceTile(
             .onFocusChanged { onFocusChange(it.isFocused) }
             .focusable()
             .onKeyEvent { e ->
-                if ((e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_CENTER ||
-                            e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_ENTER) &&
-                    e.type == KeyEventType.KeyUp) {
-                    Sounds.select()
-                    onClick()
-                    true
-                } else false
+                when (e.nativeKeyEvent.keyCode) {
+                    NativeKeyEvent.KEYCODE_MENU -> { if (e.type == KeyEventType.KeyUp) onMenu(); true }
+                    NativeKeyEvent.KEYCODE_BACK -> { if (e.type == KeyEventType.KeyUp) onBack(); true }
+                    NativeKeyEvent.KEYCODE_DPAD_CENTER, NativeKeyEvent.KEYCODE_ENTER -> {
+                        if (e.type == KeyEventType.KeyUp) { Sounds.select(); onClick(); true } else false
+                    }
+                    else -> false
+                }
             },
     ) {
         Box(
@@ -144,7 +182,7 @@ private fun LiveSourceTile(
         ) {
             BasicText(
                 if (isCurrent) "▶" else source.name.take(1),
-                style = TextStyle(Color.White, fontSize = 44.sp, fontWeight = FontWeight.Bold),
+                style = TextStyle(Color.White, fontSize = 50.sp, fontWeight = FontWeight.Bold),
             )
         }
         BasicText(

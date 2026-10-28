@@ -1036,7 +1036,10 @@ val target = with(density) { metrics.scrollFor(if (inGrid) focusedRow else 0, ro
             visible = overlay is Overlay.LiveSourceMenu,
             sources = vm.getAllLiveSources(),
             currentId = vm.currentLiveSourceId,
-            onSelect = { vm.selectLiveSource(it) },
+            onSelect = { vm.selectLiveSource(it); vm.overlay = Overlay.None },
+            onRename = { /* TODO: 手机网页管理 */ },
+            onEditUrl = { /* TODO: 手机网页管理 */ },
+            onDelete = { vm.removeLiveSource(it) },
             onDismiss = { vm.overlay = Overlay.None },
         )
     }
