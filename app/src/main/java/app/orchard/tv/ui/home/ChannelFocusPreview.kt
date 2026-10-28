@@ -69,7 +69,11 @@ fun ChannelFocusPreview(
         val obs = LifecycleEventObserver { _, e ->
             when (e) {
                 Lifecycle.Event.ON_STOP -> { player?.pause(); player?.volume = 0f }
-                Lifecycle.Event.ON_START -> { player?.playWhenReady = true; player?.volume = 1f }
+                Lifecycle.Event.ON_START -> {
+                    player?.playWhenReady = true
+                    player?.volume = 1f
+                    player?.seekToDefaultPosition() // 回到桌面时跳到直播最新位置
+                }
                 else -> {}
             }
         }
