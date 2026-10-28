@@ -664,7 +664,7 @@ private fun greetingText(hour: Int): String = when (hour) {
     in 0..5 -> "晚上好"
     in 6..8 -> "早上好"
     in 9..11 -> "上午好"
-    in 12 -> "中午好"
+    12 -> "中午好"
     in 13..17 -> "下午好"
     else -> "晚上好"
 }
