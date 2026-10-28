@@ -91,6 +91,8 @@ fun LiveSourceMenu(
 private fun LiveSourceCard(
     source: LiveSource,
     isFocused: Boolean,
+    isFirst: Boolean,
+    isLast: Boolean,
     onClick: () -> Unit,
     onFocusChange: (Boolean) -> Unit,
     focusRequester: FocusRequester,
@@ -99,7 +101,7 @@ private fun LiveSourceCard(
     val cardWidth = 180.dp
     val cardHeight = cardWidth * 9f / 16f
     val scale by animateFloatAsState(if (isFocused) 1.1f else 1f, spring(0.86f, 300f), label="scale")
-    
+
     Box(
         modifier = Modifier
             .scale(scale)
@@ -112,9 +114,15 @@ private fun LiveSourceCard(
             .onFocusChanged { onFocusChange(it.isFocused) }
             .focusable()
             .onKeyEvent { e ->
+                if (e.type == KeyEventType.KeyDown) {
+                    // 撞边音效
+                    if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_LEFT && isFirst) { Sounds.limit(); return@onKeyEvent true }
+                    if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_RIGHT && isLast) { Sounds.limit(); return@onKeyEvent true }
+                }
                 if ((e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_CENTER ||
                             e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_ENTER) &&
                     e.type == KeyEventType.KeyUp) {
+                    Sounds.select()
                     onClick()
                     true
                 } else false
