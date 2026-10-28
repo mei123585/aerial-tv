@@ -120,6 +120,7 @@
     <string name="st_focus_style">焦点样式</string>
     <string name="st_home_layout">主屏幕</string>
     <string name="st_layout">布局</string>
+    <string name="st_live_preview">直播预览</string>
     <string name="st_clock">时钟</string>
     <string name="st_clock_left">左上</string>
     <string name="st_clock_right">右上</string>
