@@ -625,14 +625,14 @@ fun ShelfClock(
         )
         Weather.now?.takeIf { AerialSettings.showWeather }?.let { w ->
             val place = Weather.place?.takeIf { it.length <= 12 }
-            val range = if (w.high != null && w.low != null) stringResource(R.string.weather_high_low, w.high, w.low) else null
-            val detail = listOfNotNull(place, stringResource(conditionName(w.kind)), range).joinToString(" · ")
+            val range = if (w.high != null && w.low != null) "${w.low}°~${w.high}°" else null
+            val detail = listOfNotNull(place, stringResource(conditionName(w.kind)), range).joinToString("·")
             Row(aside.padding(top = 18.dp).capBox(Type.ClockDetail.fontSize), verticalAlignment = Alignment.CenterVertically) {
                 GlyphIcon(glyphFor(w), Color.White, 18.dp, Modifier.padding(end = 7.dp))
                 BasicText(
                     buildAnnotatedString {
                         append("${w.celsius}°")
-                        withStyle(SpanStyle(color = dim, fontWeight = FontWeight.W500)) { append("  $detail") }
+                        if (!detail.isNullOrBlank()) withStyle(SpanStyle(color = dim, fontWeight = FontWeight.W500)) { append(" $detail") }
                     },
                     style = Type.ClockDetail.copy(shadow = shadow),
                 )
@@ -733,59 +733,52 @@ fun CornerClock(now: LocalDateTime, modifier: Modifier = Modifier, toSaver: () -
     }
     val lunar = if (Locale.getDefault().language == "zh") Lunar.text(now.toLocalDate()) else null
     val dateStr = remember(now) {
-        SimpleDateFormat("yyyy年M月d日", Locale.getDefault()).format(Date(
+        SimpleDateFormat("M月d日", Locale.getDefault()).format(Date(
             now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()))
     }
     val weekday = remember(now) {
         SimpleDateFormat("EEEE", Locale.getDefault()).format(Date(
             now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()))
     }
-    Column(modifier, horizontalAlignment = Alignment.Start) {
-        // 问候语（小字号）
+    Column(
+        modifier = modifier.then(aside),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        // 第一行：问候语+感叹号 + 日期星期农历
         BasicText(
-            greetingText(now.hour),
+            buildString {
+                append(greetingText(now.hour) + "！")
+                append("  $dateStr $weekday")
+                if (lunar != null) append(" $lunar")
+            },
             style = Type.Headline.copy(color = dim, shadow = shadow),
-            modifier = aside,
         )
-        Row(
-            modifier = Modifier.padding(top = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // 左边：大时间（48sp，字高约等于右侧三行总高度）
-            BasicText(
-                timeText(now),
-                style = Type.SmallClock.copy(fontSize = 48.sp, color = dim, shadow = shadow),
-                modifier = Modifier.toSaverClock(toSaver, 48.sp, 48.sp.value.dp * CAP_TOP, drift),
-            )
-            Spacer(Modifier.width(14.dp))
-            // 竖线（贯穿右侧三行高度）
-            Box(
-                Modifier
-                    .width(1.5.dp)
-                    .height(IntrinsicSize.Max)
-                    .background(Color.White.copy(alpha = 0.5f))
-            )
-            Spacer(Modifier.width(14.dp))
-            // 右边三行（中字号）
-            Column(modifier = aside) {
-                Weather.now?.takeIf { AerialSettings.showWeather }?.let { w ->
-                    val place = Weather.place
-                    val cond = stringResource(conditionName(w.kind))
-                    val temp = if (w.high != null && w.low != null) "${w.low}℃ ~ ${w.high}℃" else "${w.celsius}℃"
-                    BasicText(
-                        listOfNotNull(place, cond, temp).joinToString(" "),
-                        style = Type.Headline.copy(color = dim, shadow = shadow),
-                    )
-                }
+        // 第二行：大时间
+        BasicText(
+            timeText(now),
+            style = Type.SmallClock.copy(fontSize = 48.sp, color = dim, shadow = shadow),
+            modifier = Modifier
+                .padding(top = 2.dp)
+                .toSaverClock(toSaver, 48.sp, 48.sp.value.dp * CAP_TOP, drift),
+        )
+        // 第三行：天气图标 + 当前温度 + 详细天气
+        Weather.now?.takeIf { AerialSettings.showWeather }?.let { w ->
+            val place = Weather.place
+            val cond = stringResource(conditionName(w.kind))
+            val range = if (w.high != null && w.low != null) "${w.low}℃~${w.high}℃" else ""
+            Row(
+                modifier = Modifier.padding(top = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                GlyphIcon(glyphFor(w), dim, 16.dp, Modifier.padding(end = 6.dp))
                 BasicText(
-                    dateStr,
+                    buildString {
+                        append("${w.celsius}℃")
+                        if (!place.isNullOrBlank() || range.isNotEmpty()) {
+                            append("  ${listOfNotNull(place, cond, range).joinToString("·")}")
+                        }
+                    },
                     style = Type.Headline.copy(color = dim, shadow = shadow),
-                    modifier = Modifier.padding(top = 3.dp),
-                )
-                BasicText(
-                    if (lunar != null) "$weekday $lunar" else weekday,
-                    style = Type.Headline.copy(color = dim, shadow = shadow),
-                    modifier = Modifier.padding(top = 3.dp),
                 )
             }
         }
