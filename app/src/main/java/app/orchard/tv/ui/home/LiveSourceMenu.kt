@@ -87,7 +87,7 @@ fun LiveSourceMenu(
     val gridMargin = 56.dp
     val gridGap = 28.dp
     val columns = 5
-    val showNames = AerialSettings.showAppNames
+    val showNames = AerialSettings.showAllNames
 
     androidx.compose.foundation.layout.BoxWithConstraints(
         modifier = Modifier.fillMaxSize(),
