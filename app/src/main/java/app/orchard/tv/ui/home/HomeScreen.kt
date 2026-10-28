@@ -428,13 +428,23 @@ fun HomeScreen(
                 if (uiHidden && focusedPkg == "com.jxiptv.softconsole") {
                     if (e.type == KeyEventType.KeyDown) {
                         when (e.nativeKeyEvent.keyCode) {
-                            // 菜单键呼二级菜单
-                            NativeKeyEvent.KEYCODE_MENU -> vm.overlay = Overlay.LiveSourceMenu
-                            // 音量键不恢复UI，直接透传
+                            // 菜单键：二级菜单没开就开，开了就关
+                            NativeKeyEvent.KEYCODE_MENU -> {
+                                vm.overlay = if (overlay is Overlay.LiveSourceMenu) Overlay.None else Overlay.LiveSourceMenu
+                            }
+                            // 返回键：二级菜单开着就关菜单，没开才恢复UI
+                            NativeKeyEvent.KEYCODE_BACK -> {
+                                if (overlay !is Overlay.LiveSourceMenu) uiHidden = false
+                                // 二级菜单的关闭交给 BackHandler
+                            }
+                            // 音量键透传
                             NativeKeyEvent.KEYCODE_VOLUME_UP, NativeKeyEvent.KEYCODE_VOLUME_DOWN,
                             NativeKeyEvent.KEYCODE_VOLUME_MUTE -> return@onPreviewKeyEvent false
-                            // 其他任意键恢复UI
-                            else -> uiHidden = false
+                            // 方向键/确认键：二级菜单开着就传给菜单内部处理，没开才恢复UI
+                            else -> {
+                                if (overlay is Overlay.LiveSourceMenu) return@onPreviewKeyEvent false
+                                uiHidden = false
+                            }
                         }
                     }
                     return@onPreviewKeyEvent true
