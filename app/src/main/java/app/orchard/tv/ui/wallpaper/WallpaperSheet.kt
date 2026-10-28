@@ -214,6 +214,13 @@ fun WallpaperSheet(
                     Spacer(Modifier.height(10.dp))
                     Group { note ->
                         Choices(
+                            "直播预览",
+                            "焦点选中IPTV应用时背景播放相关直播",
+                            note,
+                            listOf(true to R.string.st_on, false to R.string.st_off),
+                            AerialSettings.livePreviewEnabled, AerialSettings::chooseLivePreview,
+                        )
+                        Choices(
                             R.string.st_focus_style,
                             stringResource(if (AerialSettings.focusStyle == FocusStyle.HighContrast) R.string.st_focus_high_hint else R.string.st_focus_standard_hint),
                             note,
