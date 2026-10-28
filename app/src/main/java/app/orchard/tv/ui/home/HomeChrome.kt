@@ -726,23 +726,52 @@ fun CornerClock(now: LocalDateTime, modifier: Modifier = Modifier, toSaver: () -
     val drift = heldDrift(saving, now)
     val dim = Color.White.copy(alpha = 0.92f)
     val shadow = Shadow(Color.Black.copy(alpha = 0.5f), blurRadius = 8f)
-    Row(modifier.height(34.dp), verticalAlignment = Alignment.CenterVertically) {
+    val aside = Modifier.graphicsLayer {
+        alpha = 1f - (toSaver() * 2.5f).coerceIn(0f, 1f)
+        compositingStrategy = CompositingStrategy.ModulateAlpha
+    }
+    Column(modifier, horizontalAlignment = Alignment.Start) {
         BasicText(
-            timeText(now), style = Type.SmallClock.copy(fontSize = Type.Title.fontSize, color = dim, shadow = shadow),
-            modifier = Modifier.toSaverClock(toSaver, Type.Title.fontSize, Type.Title.fontSize.value.dp * CAP_TOP, drift),
+            greetingText(now.hour),
+            style = Type.Headline.copy(color = dim, shadow = shadow),
+            modifier = aside,
         )
-        Weather.now?.takeIf { AerialSettings.showWeather }?.let { w ->
-            val aside = Modifier.graphicsLayer {
-                alpha = 1f - (toSaver() * 2.5f).coerceIn(0f, 1f)
-                compositingStrategy = CompositingStrategy.ModulateAlpha
+        Row(
+            modifier = Modifier.padding(top = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BasicText(
+                timeText(now),
+                style = Type.SmallClock.copy(fontSize = Type.Title.fontSize, color = dim, shadow = shadow),
+                modifier = Modifier.toSaverClock(toSaver, Type.Title.fontSize, Type.Title.fontSize.value.dp * CAP_TOP, drift),
+            )
+            Spacer(Modifier.width(12.dp))
+            Box(
+                Modifier
+                    .width(1.5.dp)
+                    .height(IntrinsicSize.Max)
+                    .background(Color.White.copy(alpha = 0.4f))
+            )
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = aside) {
+                Weather.now?.takeIf { AerialSettings.showWeather }?.let { w ->
+                    val place = Weather.place
+                    val cond = stringResource(conditionName(w.kind))
+                    val temp = if (w.high != null && w.low != null) "${w.low}°~${w.high}°" else "${w.celsius}°"
+                    BasicText(
+                        listOfNotNull(place, cond, temp).joinToString(" "),
+                        style = Type.Headline.copy(color = dim, shadow = shadow),
+                    )
+                }
+                BasicText(
+                    dateText(now),
+                    style = Type.Headline.copy(color = dim, shadow = shadow),
+                    modifier = Modifier.padding(top = 2.dp),
+                )
             }
-            GlyphIcon(glyphFor(w), dim, 18.dp, aside.padding(start = 16.dp, end = 6.dp))
-            val place = Weather.place?.takeIf { it.length <= 12 }
-            BasicText(listOfNotNull(place, "${w.celsius}°").joinToString(" "), style = Type.Headline.copy(color = dim, shadow = shadow), modifier = aside)
         }
     }
 }
-
 private fun glyphFor(w: WeatherNow): Glyph = when (w.kind) {
     WeatherKind.Clear -> if (w.day) Glyph.Sun else Glyph.Moon
     WeatherKind.PartlyCloudy -> if (w.day) Glyph.CloudSun else Glyph.Cloud
