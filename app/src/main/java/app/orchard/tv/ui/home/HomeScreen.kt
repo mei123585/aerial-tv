@@ -681,7 +681,7 @@ val target = with(density) { metrics.scrollFor(if (inGrid) focusedRow else 0, ro
                     .offset { IntOffset(0, -scroll.value.roundToInt()) }
                     .graphicsLayer {
                         // UI隐藏时隐藏所有应用图标和时钟
-                        if (uiHidden && focusedPkg == "com.jxiptv.softconsole" && overlay == Overlay.None) alpha = 0f
+                        if (uiHidden) alpha = 0f
                     }
                     .then(
                         if (shedUnderPanel) Modifier.graphicsLayer {
