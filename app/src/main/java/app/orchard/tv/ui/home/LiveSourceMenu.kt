@@ -4,6 +4,7 @@ import android.view.KeyEvent as NativeKeyEvent
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -165,7 +166,8 @@ private fun LiveSourceTile(
                 .width(tileW)
                 .height(tileH)
                 .clip(RoundedCornerShape(28.dp))
-                .background(bgColor),
+                .background(bgColor)
+                .then(if (isFocused) Modifier.border(2.dp, Color.White, RoundedCornerShape(28.dp)) else Modifier),
             contentAlignment = Alignment.Center,
         ) {
             BasicText(
@@ -180,6 +182,7 @@ private fun LiveSourceTile(
                 textAlign = TextAlign.Center,
                 fontSize = 15.sp,
                 fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                shadow = androidx.compose.ui.graphics.Shadow(Color.Black.copy(alpha = 0.6f), blurRadius = 8f),
             ),
             modifier = Modifier.padding(top = 10.dp),
         )
