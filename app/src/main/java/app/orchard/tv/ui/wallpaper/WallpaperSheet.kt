@@ -214,19 +214,19 @@ fun WallpaperSheet(
                     Spacer(Modifier.height(10.dp))
                     Group { note ->
                         Choices(
-    R.string.st_live_preview,
-    "...",
-    note,
-    listOf(...),
-    AerialSettings.livePreviewEnabled, AerialSettings::chooseLivePreview, first = true,  // 加 first=true
-)
-Choices(
-    R.string.st_focus_style,
-    "...",
-    note,
-    listOf(...),
-    AerialSettings.focusStyle, AerialSettings::chooseFocusStyle,  // 去掉 first=true
-)
+                            R.string.st_live_preview,
+                            "焦点选中IPTV应用时背景播放相关直播",
+                            note,
+                            listOf(true to R.string.st_on, false to R.string.st_off),
+                            AerialSettings.livePreviewEnabled, AerialSettings::chooseLivePreview, first = true,
+                        )
+                        Choices(
+                            R.string.st_focus_style,
+                            stringResource(if (AerialSettings.focusStyle == FocusStyle.HighContrast) R.string.st_focus_high_hint else R.string.st_focus_standard_hint),
+                            note,
+                            listOf(FocusStyle.HighContrast to R.string.st_focus_high, FocusStyle.Standard to R.string.st_focus_standard),
+                            AerialSettings.focusStyle, AerialSettings::chooseFocusStyle,
+                        )
                         Choices(
                             R.string.st_sounds,
                             stringResource(if (AerialSettings.uiSounds == UiSounds.Tv) R.string.st_sounds_tv_hint else R.string.st_sounds_hint),
