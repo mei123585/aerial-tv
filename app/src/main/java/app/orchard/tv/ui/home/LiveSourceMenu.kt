@@ -11,18 +11,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -35,92 +36,94 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.orchard.tv.LiveSource
 import app.orchard.tv.system.Sounds
 
+// 预设源的配色
+private val presetColors = listOf(
+    Color(0xFFD32F2F), Color(0xFF1976D2), Color(0xFF388E3C), Color(0xFFF57C00),
+    Color(0xFF7B1FA2), Color(0xFF00796B), Color(0xFF5D4037), Color(0xFF455A64),
+)
+
 @Composable
 fun LiveSourceMenu(
     visible: Boolean,
     sources: List<LiveSource>,
-    currentIndex: Int,
-    onSelect: (Int) -> Unit,
-    onCustomSave: (name: String, url: String) -> Unit,
+    currentId: String,
+    onSelect: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     if (!visible) return
+    val currentIndex = sources.indexOfFirst { it.id == currentId }.coerceAtLeast(0)
     var focusedIndex by remember { mutableIntStateOf(currentIndex) }
-    var showInputDialog by remember { mutableStateOf(false) }
-    val focusRequesters = remember { List(5) { FocusRequester() } }
+    val focusRequesters = remember { List(sources.size) { FocusRequester() } }
+    val gridState = rememberLazyGridState()
+
     LaunchedEffect(visible) {
-        kotlinx.coroutines.delay(300) // 等视图加载完再请求焦点
+        kotlinx.coroutines.delay(150)
         focusRequesters.getOrNull(currentIndex)?.requestFocus()
     }
 
-    Box(modifier = Modifier.fillMaxSize().padding(bottom = 30.dp), contentAlignment = Alignment.BottomCenter) {
-        Row(horizontalArrangement = Arrangement.spacedBy(28.dp), verticalAlignment = Alignment.CenterVertically) {
-            sources.forEachIndexed { index, source ->
-                LiveSourceCard(
-                    source = source,
-                    isFocused = focusedIndex == index,
-                    isFirst = index == 0,
-                    isLast = index == sources.size - 1,
-                    onClick = {
-                        if (index == 4 && source.url.isBlank()) showInputDialog = true
-                        else { onSelect(index); onDismiss() }
-                    },
-                    onFocusChange = { if (it) { focusedIndex = index; Sounds.focusMoved() } },
-                    focusRequester = focusRequesters[index],
-                )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.55f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            BasicText(
+                "选择直播源",
+                style = TextStyle(Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(bottom = 30.dp),
+            )
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                state = gridState,
+                horizontalArrangement = Arrangement.spacedBy(28.dp),
+                verticalArrangement = Arrangement.spacedBy(28.dp),
+                modifier = Modifier.padding(horizontal = 60.dp),
+            ) {
+                itemsIndexed(sources) { index, source ->
+                    LiveSourceTile(
+                        source = source,
+                        isFocused = focusedIndex == index,
+                        isCurrent = source.id == currentId,
+                        onClick = { onSelect(source.id); onDismiss() },
+                        onFocusChange = { if (it) { focusedIndex = index; Sounds.focusMoved() } },
+                        focusRequester = focusRequesters[index],
+                    )
+                }
             }
         }
-    }
-    if (showInputDialog) {
-        CustomSourceInputDialog(
-            onConfirm = { n, u -> onCustomSave(n, u); showInputDialog = false; onSelect(4); onDismiss() },
-            onDismiss = { showInputDialog = false },
-        )
     }
 }
 
 @Composable
-private fun LiveSourceCard(
+private fun LiveSourceTile(
     source: LiveSource,
     isFocused: Boolean,
-    isFirst: Boolean,
-    isLast: Boolean,
+    isCurrent: Boolean,
     onClick: () -> Unit,
     onFocusChange: (Boolean) -> Unit,
     focusRequester: FocusRequester,
 ) {
-    // 和原生图标一样的大小：宽高比9:16，焦点时放大1.1倍
-    val cardWidth = 180.dp
-    val cardHeight = cardWidth * 9f / 16f
-    val scale by animateFloatAsState(if (isFocused) 1.1f else 1f, spring(0.86f, 300f), label="scale")
+    val tileSize = 130.dp
+    val scale by animateFloatAsState(if (isFocused) 1.1f else 1f, spring(0.86f, 300f), label = "scale")
+    val bgColor = presetColors[source.colorIndex % presetColors.size]
 
-    Box(
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .scale(scale)
-            .width(cardWidth)
-            .size(cardWidth, cardHeight)
-            .clip(RoundedCornerShape(16.dp))
-            .background(if (isFocused) Color.White.copy(0.2f) else Color.Transparent)
-            .border(if (isFocused) 2.dp else 0.dp, Color.White, RoundedCornerShape(16.dp))
             .focusRequester(focusRequester)
             .onFocusChanged { onFocusChange(it.isFocused) }
             .focusable()
             .onKeyEvent { e ->
-                if (e.type == KeyEventType.KeyDown) {
-                    // 撞边音效
-                    if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_LEFT && isFirst && e.nativeKeyEvent.repeatCount == 0) { Sounds.limit(); return@onKeyEvent true }
-                    if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_RIGHT && isLast && e.nativeKeyEvent.repeatCount == 0) { Sounds.limit(); return@onKeyEvent true }
-                    if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_LEFT && isFirst) return@onKeyEvent true
-                    if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_RIGHT && isLast) return@onKeyEvent true
-                }
                 if ((e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_CENTER ||
                             e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_ENTER) &&
                     e.type == KeyEventType.KeyUp) {
@@ -129,126 +132,29 @@ private fun LiveSourceCard(
                     true
                 } else false
             },
-        contentAlignment = Alignment.Center,
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            // 图标区域，和原生图标一样大
-            Box(
-                modifier = Modifier
-                    .size(120.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFCC0000)),
-                contentAlignment = Alignment.Center,
-            ) {
-                BasicText("直播", style = TextStyle(Color.White, fontSize = 24.sp))
-            }
-            BasicText(
-                text = source.name,
-                style = TextStyle(
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    fontSize = 16.sp,
-                ),
-                modifier = Modifier.padding(top = 12.dp),
-            )
-        }
-    }
-}
-
-@Composable
-private fun CustomSourceInputDialog(
-    onConfirm: (String, String) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    var name by remember { mutableStateOf("") }
-    var url by remember { mutableStateOf("") }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(0.5f)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(
+        Box(
             modifier = Modifier
-                .width(400.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color.White)
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .size(tileSize)
+                .clip(RoundedCornerShape(28.dp))
+                .background(bgColor)
+                .border(if (isFocused) 3.dp else 0.dp, Color.White, RoundedCornerShape(28.dp)),
+            contentAlignment = Alignment.Center,
         ) {
-            BasicText("添加自定义直播源", style = TextStyle(Color.Black, fontSize = 18.sp))
             BasicText(
-                "名称",
-                style = TextStyle(Color.Gray, fontSize = 12.sp),
-                modifier = Modifier.padding(top = 16.dp).fillMaxWidth(),
+                if (isCurrent) "▶" else source.name.take(1),
+                style = TextStyle(Color.White, fontSize = 44.sp, fontWeight = FontWeight.Bold),
             )
-            BasicTextField(
-                value = name,
-                onValueChange = { name = it },
-                textStyle = TextStyle(Color.Black, fontSize = 14.sp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp)
-                    .background(Color(0xFFF0F0F0), RoundedCornerShape(8.dp))
-                    .padding(12.dp),
-            )
-            BasicText(
-                "直播地址（b23.tv短链或m3u8）",
-                style = TextStyle(Color.Gray, fontSize = 12.sp),
-                modifier = Modifier.padding(top = 16.dp).fillMaxWidth(),
-            )
-            BasicTextField(
-                value = url,
-                onValueChange = { url = it },
-                textStyle = TextStyle(Color.Black, fontSize = 14.sp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp)
-                    .background(Color(0xFFF0F0F0), RoundedCornerShape(8.dp))
-                    .padding(12.dp),
-            )
-            Row(
-                modifier = Modifier.padding(top = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFE0E0E0))
-                        .padding(horizontal = 24.dp, vertical = 12.dp)
-                        .focusable()
-                        .onKeyEvent { e ->
-                            if ((e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_CENTER ||
-                                        e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_ENTER) &&
-                                e.type == KeyEventType.KeyUp) {
-                                onDismiss()
-                                true
-                            } else false
-                        },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    BasicText("取消", style = TextStyle(Color.Black, fontSize = 14.sp))
-                }
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFCC0000))
-                        .padding(horizontal = 24.dp, vertical = 12.dp)
-                        .focusable()
-                        .onKeyEvent { e ->
-                            if ((e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_CENTER ||
-                                        e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_ENTER) &&
-                                e.type == KeyEventType.KeyUp) {
-                                onConfirm(name, url)
-                                true
-                            } else false
-                        },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    BasicText("保存", style = TextStyle(Color.White, fontSize = 14.sp))
-                }
-            }
         }
+        BasicText(
+            text = source.name,
+            style = TextStyle(
+                color = Color.White,
+                textAlign = TextAlign.Center,
+                fontSize = 16.sp,
+                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+            ),
+            modifier = Modifier.padding(top = 12.dp),
+        )
     }
 }

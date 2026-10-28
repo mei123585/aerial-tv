@@ -180,6 +180,44 @@ class PhoneServer private constructor(private val context: Context, private val 
                     onMain { Weather.useNetworkLocation() }
                     json(state())
                 }
+                session.method == Method.POST && path == "/api/live-source" -> {
+                    val f = form(session)
+                    val prefs = context.getSharedPreferences("live_sources", Context.MODE_PRIVATE)
+                    val list = org.json.JSONArray(prefs.getString("custom_list", "[]") ?: "[]")
+                    val id = f["id"].orEmpty()
+                    if (id.isNotEmpty()) {
+                        for (i in 0 until list.length()) {
+                            if (list.getJSONObject(i).optString("id") == id) {
+                                val o = list.getJSONObject(i)
+                                f["name"]?.let { o.put("name", it) }
+                                f["url"]?.let { o.put("url", it.trim()) }
+                                break
+                            }
+                        }
+                    } else {
+                        val newId = "custom_" + System.currentTimeMillis()
+                        list.put(org.json.JSONObject()
+                            .put("id", newId)
+                            .put("name", f["name"].orEmpty().ifBlank { "直播" })
+                            .put("url", f["url"].orEmpty().trim())
+                            .put("isBilibili", f["url"].orEmpty().contains("b23.tv") || f["url"].orEmpty().contains("live.bilibili.com"))
+                            .put("colorIndex", list.length()))
+                    }
+                    prefs.edit().putString("custom_list", list.toString()).apply()
+                    json(state())
+                }
+                session.method == Method.POST && path == "/api/live-source/delete" -> {
+                    val id = form(session)["id"].orEmpty()
+                    val prefs = context.getSharedPreferences("live_sources", Context.MODE_PRIVATE)
+                    val list = org.json.JSONArray(prefs.getString("custom_list", "[]") ?: "[]")
+                    val newList = org.json.JSONArray()
+                    for (i in 0 until list.length()) {
+                        val o = list.getJSONObject(i)
+                        if (o.optString("id") != id) newList.put(o)
+                    }
+                    prefs.edit().putString("custom_list", newList.toString()).apply()
+                    json(state())
+                }
                 else -> text(Response.Status.NOT_FOUND, "Not found")
             }
         }.getOrElse {
@@ -258,6 +296,23 @@ class PhoneServer private constructor(private val context: Context, private val 
                 put("place", Weather.place ?: "")
                 put("chosen", Weather.chosen)
                 Weather.now?.let { put("celsius", it.celsius); put("kind", it.kind.name.lowercase()); put("day", it.day) }
+            })
+            .put("liveSources", JSONArray().apply {
+                // 预设源
+                val presets = listOf(
+                    Triple("preset_0", "央视网", "https://b23.tv/oJgZJqv"),
+                    Triple("preset_1", "央视频", "https://b23.tv/anI3d9f"),
+                    Triple("preset_2", "央视网快看", "https://b23.tv/zxbwWNq"),
+                    Triple("preset_3", "快看", "https://b23.tv/efy30LE"),
+                )
+                presets.forEach { put(JSONObject().put("id", it.first).put("name", it.second).put("url", it.third).put("preset", true)) }
+                // 自定义源
+                val prefs = context.getSharedPreferences("live_sources", Context.MODE_PRIVATE)
+                val list = org.json.JSONArray(prefs.getString("custom_list", "[]") ?: "[]")
+                for (i in 0 until list.length()) {
+                    val o = list.getJSONObject(i)
+                    put(JSONObject().put("id", o.getString("id")).put("name", o.getString("name")).put("url", o.getString("url")).put("preset", false))
+                }
             })
     }
 

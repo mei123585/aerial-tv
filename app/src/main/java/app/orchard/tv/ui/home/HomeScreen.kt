@@ -673,7 +673,7 @@ val target = with(density) { metrics.scrollFor(if (inGrid) focusedRow else 0, ro
             // ===== 直播预览：只在焦点选中第一排目标应用时才组合 =====
             if (channelPreviewVisible) {
                 ChannelFocusPreview(
-                    source = vm.getAllLiveSources().getOrNull(vm.currentLiveSourceIndex),
+                    source = vm.getAllLiveSources().firstOrNull { it.id == vm.currentLiveSourceId },
                 )
             }
             Box(
@@ -1035,9 +1035,8 @@ val target = with(density) { metrics.scrollFor(if (inGrid) focusedRow else 0, ro
         LiveSourceMenu(
             visible = overlay is Overlay.LiveSourceMenu,
             sources = vm.getAllLiveSources(),
-            currentIndex = vm.currentLiveSourceIndex,
+            currentId = vm.currentLiveSourceId,
             onSelect = { vm.selectLiveSource(it) },
-            onCustomSave = { n, u -> vm.saveCustomLiveSource(n, u) },
             onDismiss = { vm.overlay = Overlay.None },
         )
     }

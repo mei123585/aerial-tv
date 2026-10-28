@@ -54,9 +54,12 @@ private const val POLL_QUIET_MS = 400L
 
 // ===== 新增：直播源数据类 =====
 data class LiveSource(
+    val id: String,
     val name: String,
     val url: String,
     val isBilibili: Boolean = true,
+    val isPreset: Boolean = false,
+    val colorIndex: Int = 0,
 )
 
 sealed interface Overlay {
@@ -144,48 +147,77 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     // ===== 新增：直播源管理 =====
     val presetLiveSources = listOf(
-        LiveSource("央视网", "https://b23.tv/oJgZJqv", isBilibili = true),
-        LiveSource("央视频", "https://b23.tv/anI3d9f", isBilibili = true),
-        LiveSource("央视网快看", "https://b23.tv/zxbwWNq", isBilibili = true),
-        LiveSource("快看", "https://b23.tv/efy30LE", isBilibili = true),
+        LiveSource("preset_0", "央视网", "https://b23.tv/oJgZJqv", isBilibili = true, isPreset = true, colorIndex = 0),
+        LiveSource("preset_1", "央视频", "https://b23.tv/anI3d9f", isBilibili = true, isPreset = true, colorIndex = 1),
+        LiveSource("preset_2", "央视网快看", "https://b23.tv/zxbwWNq", isBilibili = true, isPreset = true, colorIndex = 2),
+        LiveSource("preset_3", "快看", "https://b23.tv/efy30LE", isBilibili = true, isPreset = true, colorIndex = 3),
     )
-    var currentLiveSourceIndex by mutableStateOf(0); private set
-    var customLiveSourceUrl by mutableStateOf(""); private set
-    var customLiveSourceName by mutableStateOf("自定义"); private set
+    var currentLiveSourceId by mutableStateOf("preset_0"); private set
+    var liveSources by mutableStateOf<List<LiveSource>>(emptyList()); private set
 
     init {
-        // 读取保存的自定义源和选中索引
         val prefs = context.getSharedPreferences("live_sources", android.content.Context.MODE_PRIVATE)
-        currentLiveSourceIndex = prefs.getInt("selected_index", 0)
-        customLiveSourceUrl = prefs.getString("custom_url", "") ?: ""
-        customLiveSourceName = prefs.getString("custom_name", "自定义") ?: "自定义"
+        currentLiveSourceId = prefs.getString("selected_id", "preset_0") ?: "preset_0"
+        // 读取自定义源列表（JSON数组）
+        val customJson = prefs.getString("custom_list", "[]") ?: "[]"
+        val customs = runCatching {
+            val arr = org.json.JSONArray(customJson)
+            (0 until arr.length()).map { i ->
+                val o = arr.getJSONObject(i)
+                LiveSource(
+                    id = o.getString("id"),
+                    name = o.getString("name"),
+                    url = o.getString("url"),
+                    isBilibili = o.optBoolean("isBilibili", true),
+                    isPreset = false,
+                    colorIndex = o.optInt("colorIndex", 0),
+                )
+            }
+        }.getOrDefault(emptyList())
+        liveSources = presetLiveSources + customs
     }
 
-    fun getAllLiveSources(): List<LiveSource> {
-        val custom = if (customLiveSourceUrl.isNotBlank()) {
-            LiveSource(customLiveSourceName, customLiveSourceUrl,
-                isBilibili = customLiveSourceUrl.contains("b23.tv") || customLiveSourceUrl.contains("live.bilibili.com"))
-        } else {
-            // 默认用第一个源
-            presetLiveSources[0]
+    fun getAllLiveSources(): List<LiveSource> = liveSources
+
+    fun selectLiveSource(id: String) {
+        val s = liveSources.find { it.id == id } ?: return
+        if (s.url.isBlank()) return
+        currentLiveSourceId = id
+        context.getSharedPreferences("live_sources", android.content.Context.MODE_PRIVATE)
+            .edit().putString("selected_id", id).apply()
+    }
+
+    fun addCustomLiveSource(name: String, url: String) {
+        val id = "custom_" + System.currentTimeMillis()
+        val source = LiveSource(
+            id = id,
+            name = name.ifBlank { "直播" },
+            url = url.trim(),
+            isBilibili = url.contains("b23.tv") || url.contains("live.bilibili.com"),
+            isPreset = false,
+            colorIndex = (liveSources.size) % 5,
+        )
+        liveSources = liveSources + source
+        saveCustomList()
+    }
+
+    fun removeLiveSource(id: String) {
+        val s = liveSources.find { it.id == id } ?: return
+        if (s.isPreset) return
+        liveSources = liveSources - s
+        if (currentLiveSourceId == id) currentLiveSourceId = "preset_0"
+        saveCustomList()
+    }
+
+    private fun saveCustomList() {
+        val customs = liveSources.filter { !it.isPreset }
+        val arr = org.json.JSONArray()
+        customs.forEach {
+            arr.put(org.json.JSONObject().put("id", it.id).put("name", it.name)
+                .put("url", it.url).put("isBilibili", it.isBilibili).put("colorIndex", it.colorIndex))
         }
-        return presetLiveSources + custom
-    }
-
-    fun selectLiveSource(index: Int) {
-        currentLiveSourceIndex = index.coerceIn(0, 4)
         context.getSharedPreferences("live_sources", android.content.Context.MODE_PRIVATE)
-            .edit().putInt("selected_index", currentLiveSourceIndex).apply()
-    }
-
-    fun saveCustomLiveSource(name: String, url: String) {
-        customLiveSourceName = name.ifBlank { "自定义" }
-        customLiveSourceUrl = url.trim()
-        context.getSharedPreferences("live_sources", android.content.Context.MODE_PRIVATE)
-            .edit()
-            .putString("custom_url", customLiveSourceUrl)
-            .putString("custom_name", customLiveSourceName)
-            .apply()
+            .edit().putString("custom_list", arr.toString()).apply()
     }
 
     /** The phone page's arranging: the tile menu's steps, without the focus moves that go with them on the TV. */
