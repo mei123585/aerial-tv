@@ -134,9 +134,9 @@ fun LiveSourceMenu(
                 val first = remember { FocusRequester() }
                 LaunchedEffect(menuForId) { first.requestFocus() }
                 // 菜单在焦点卡片正上方
-                val tileCenterX = gridMargin + sourceIndex * (tileW + gridGap) + tileW / 2
+                val tileCenterX = gridMargin + sourceIndex * (tileW + gridGap) + (tileW / 2)
                 val menuWidth = 250.dp
-                val menuOffsetX = (tileCenterX - menuWidth / 2).coerceAtLeast(0.dp)
+                val menuOffsetX = tileCenterX - (menuWidth / 2)
                 Column(
                     Modifier
                         .padding(start = menuOffsetX, bottom = 80.dp + tileH + 20.dp)
