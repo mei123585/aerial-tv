@@ -233,10 +233,10 @@ fun HomeScreen(
     var uiHidden by remember { mutableStateOf(false) }
     var lastKeyTime by remember { mutableStateOf(0L) }
     val focusedPkg = apps.getOrNull(focusedIndex)?.packageName ?: ""
-    val channelPreviewVisible = !pillFocused &&
-        focusedPkg == "com.jxiptv.softconsole" &&
+    val channelPreviewVisible = focusedPkg == "com.jxiptv.softconsole" &&
         focusedRow == 0 &&
         !vm.screensaverVisible && moving == null
+    LaunchedEffect(channelPreviewVisible) { vm.livePlaying = channelPreviewVisible }
     // 10秒无操作自动隐藏UI（一级和二级菜单都生效）
     LaunchedEffect(focusedPkg, overlay, uiHidden, lastKeyTime) {
         if (focusedPkg == "com.jxiptv.softconsole" && overlay == Overlay.None && !uiHidden) {
