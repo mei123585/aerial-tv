@@ -96,12 +96,19 @@ fun LiveSourceMenu(
     val tileH = tileW * 9f / 16f
 
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .onKeyEvent { e ->
+                if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_MENU && e.type == KeyEventType.KeyUp && menuForId == null && editMode == null) {
+                    sources.getOrNull(focusedIndex)?.let { menuForId = it.id }
+                    true
+                } else false
+            },
         contentAlignment = Alignment.BottomCenter,
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(gridGap),
-            modifier = Modifier.padding(bottom = 80.dp).padding(horizontal = gridMargin),
+            horizontalArrangement = Arrangement.spacedBy(gridGap, Alignment.CenterHorizontally),
+            modifier = Modifier.padding(bottom = 80.dp).fillMaxWidth(),
         ) {
             sources.forEachIndexed { index, source ->
                 val app = remember(source.id, source.name) { liveSourceAppEntry(source) }
@@ -169,7 +176,7 @@ private fun TextEditDialog(
     onDismiss: () -> Unit,
 ) {
     var text by remember { mutableStateOf(initial) }
-    val confirmRequester = remember { FocusRequester() }
+    val fieldRequester = remember { FocusRequester() }
     Box(
         modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)),
         contentAlignment = Alignment.Center,
@@ -183,7 +190,7 @@ private fun TextEditDialog(
                 value = text,
                 onValueChange = { text = it },
                 textStyle = TextStyle(Color.White, fontSize = 15.sp),
-                modifier = Modifier.fillMaxWidth().background(Color.White.copy(0.15f), RoundedCornerShape(10.dp)).padding(12.dp),
+                modifier = Modifier.fillMaxWidth().focusRequester(fieldRequester).background(Color.White.copy(0.15f), RoundedCornerShape(10.dp)).padding(12.dp),
             )
             Row(modifier = Modifier.padding(top = 20.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Box(
@@ -191,11 +198,11 @@ private fun TextEditDialog(
                         .onKeyEvent { e -> if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_CENTER && e.type == androidx.compose.ui.input.key.KeyEventType.KeyUp) { onDismiss(); true } else false },
                 ) { BasicText("取消", style = TextStyle(Color.White, fontSize = 14.sp)) }
                 Box(
-                    modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(Color(0xFF0A84FF)).padding(horizontal = 24.dp, vertical = 10.dp).focusRequester(confirmRequester).focusable()
+                    modifier = Modifier.clip(RoundedCornerShape(10.dp)).background(Color(0xFF0A84FF)).padding(horizontal = 24.dp, vertical = 10.dp).focusable()
                         .onKeyEvent { e -> if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_CENTER && e.type == androidx.compose.ui.input.key.KeyEventType.KeyUp) { Sounds.select(); onConfirm(text); true } else false },
                 ) { BasicText("确定", style = TextStyle(Color.White, fontSize = 14.sp)) }
             }
         }
     }
-    LaunchedEffect(Unit) { confirmRequester.requestFocus() }
+    LaunchedEffect(Unit) { fieldRequester.requestFocus() }
 }
