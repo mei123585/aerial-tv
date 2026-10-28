@@ -209,6 +209,23 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         saveCustomList()
     }
 
+    fun renameLiveSource(id: String, newName: String) {
+        liveSources = liveSources.map {
+            if (it.id == id) it.copy(name = newName.ifBlank { it.name }) else it
+        }
+        saveCustomList()
+    }
+
+    fun updateLiveSourceUrl(id: String, newUrl: String) {
+        liveSources = liveSources.map {
+            if (it.id == id) it.copy(
+                url = newUrl.trim(),
+                isBilibili = newUrl.contains("b23.tv") || newUrl.contains("live.bilibili.com")
+            ) else it
+        }
+        saveCustomList()
+    }
+
     private fun saveCustomList() {
         val customs = liveSources.filter { !it.isPreset }
         val arr = org.json.JSONArray()
