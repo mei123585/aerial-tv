@@ -239,8 +239,8 @@ fun HomeScreen(
         !vm.screensaverVisible && moving == null
     LaunchedEffect(channelPreviewVisible) { vm.livePlaying = channelPreviewVisible }
     // 10秒无操作自动隐藏UI（一级和二级菜单都生效）
-    LaunchedEffect(focusedPkg, overlay, uiHidden, lastKeyTime) {
-        if (focusedPkg == "com.jxiptv.softconsole" && overlay == Overlay.None && !uiHidden) {
+    LaunchedEffect(focusedPkg, overlay, uiHidden, lastKeyTime, channelPreviewVisible) {
+        if (channelPreviewVisible && focusedPkg == "com.jxiptv.softconsole" && overlay == Overlay.None && !uiHidden) {
             delay(10_000)
             uiHidden = true
         }
@@ -407,7 +407,7 @@ fun HomeScreen(
     }
 
     // ===== 手动快速隐藏UI：10秒内按返回键立刻藏 =====
-    BackHandler(enabled = focusedPkg == "com.jxiptv.softconsole" && !uiHidden && overlay == Overlay.None && moving == null) {
+    BackHandler(enabled = channelPreviewVisible && focusedPkg == "com.jxiptv.softconsole" && !uiHidden && overlay == Overlay.None && moving == null) {
         uiHidden = true
     }
 
@@ -417,7 +417,7 @@ fun HomeScreen(
         uiHidden = true // 关闭二级菜单后保持UI隐藏
     }
 
-    BackHandler(enabled = uiHidden && overlay == Overlay.None && focusedPkg == "com.jxiptv.softconsole") {
+    BackHandler(enabled = channelPreviewVisible && uiHidden && overlay == Overlay.None && focusedPkg == "com.jxiptv.softconsole") {
         uiHidden = false
     }
     BoxWithConstraints(
@@ -426,7 +426,7 @@ fun HomeScreen(
             .onPreviewKeyEvent { e ->
                 lastKeyTime = System.currentTimeMillis()
                 // ===== UI隐藏时按键逻辑 =====
-                if (uiHidden && focusedPkg == "com.jxiptv.softconsole") {
+                if (channelPreviewVisible && uiHidden && focusedPkg == "com.jxiptv.softconsole") {
                     if (e.type == KeyEventType.KeyDown) {
                         when (e.nativeKeyEvent.keyCode) {
                             // 菜单键：二级菜单没开就开，开了就关
@@ -682,7 +682,7 @@ val target = with(density) { metrics.scrollFor(if (inGrid) focusedRow else 0, ro
                     .offset { IntOffset(0, -scroll.value.roundToInt()) }
                     .graphicsLayer {
                         // UI隐藏时隐藏所有应用图标和时钟
-                        if (uiHidden) alpha = 0f
+                        if (channelPreviewVisible && uiHidden) alpha = 0f
                     }
                     .then(
                         if (shedUnderPanel) Modifier.graphicsLayer {
@@ -819,7 +819,7 @@ val target = with(density) { metrics.scrollFor(if (inGrid) focusedRow else 0, ro
                 .graphicsLayer {
                     alpha = when {
                         overlay is Overlay.ControlCenter -> 0f
-                        uiHidden && focusedPkg == "com.jxiptv.softconsole" -> 0f
+                        channelPreviewVisible && uiHidden && focusedPkg == "com.jxiptv.softconsole" -> 0f
                         else -> 1f
                     }
                 },
