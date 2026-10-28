@@ -27,7 +27,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -133,13 +137,12 @@ fun LiveSourceMenu(
                 MenuRow(Glyph.ChevronRight, "取消", { menuForId = null })
             }
         }
-        if (editMode != null) {
-            val (id, isRename) = when (editMode) {
-                is EditMode.Rename -> editMode.id to true
-                is EditMode.Url -> editMode.id to false
-                null -> return@Box
+        editMode?.let { mode ->
+            val (id, isRename) = when (mode) {
+                is EditMode.Rename -> mode.id to true
+                is EditMode.Url -> mode.id to false
             }
-            val source = sources.find { it.id == id } ?: return@Box
+            val source = sources.find { it.id == id } ?: return@let
             TextEditDialog(
                 title = if (isRename) "重命名" else "编辑地址",
                 initial = if (isRename) source.name else source.url,
