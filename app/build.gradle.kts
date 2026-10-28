@@ -8,7 +8,7 @@ plugins {
 }
 
 android {
-    namespace = "app.orchard.tb"
+    namespace = "app.orchard.tv"
     compileSdk = 36
 
     defaultConfig {
