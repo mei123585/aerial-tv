@@ -606,60 +606,39 @@ fun ShelfClock(
         compositingStrategy = CompositingStrategy.ModulateAlpha
     }
     Column(modifier, horizontalAlignment = if (alignEnd) Alignment.End else Alignment.Start) {
-        // 问候语
+        val lunar = if (Locale.getDefault().language == "zh") Lunar.text(now.toLocalDate()) else null
         BasicText(
-            greetingText(now.hour),
+            buildAnnotatedString {
+                append(dateText(now))
+                if (lunar != null) withStyle(SpanStyle(color = dim, fontWeight = FontWeight.W500)) { append("  $lunar") }
+            },
             style = Type.ClockDate.copy(shadow = shadow),
             modifier = aside.capBox(Type.ClockDate.fontSize),
         )
-        Row(
-            modifier = Modifier.padding(top = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            BasicText(
-                timeText(now),
-                style = Type.Clock.copy(shadow = shadow),
-                modifier = Modifier
-                    .toSaverClock(toSaver, Type.Clock.fontSize, 0.dp, drift)
-                    .capBox(Type.Clock.fontSize),
-            )
-            Spacer(Modifier.width(20.dp))
-            Row(
-                modifier = aside,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
-                    Modifier
-                        .width(2.dp)
-                        .height(IntrinsicSize.Max)
-                        .background(Color.White.copy(alpha = 0.4f))
+        BasicText(
+            timeText(now),
+            style = Type.Clock.copy(shadow = shadow),
+            modifier = Modifier.padding(top = 16.dp)
+                .toSaverClock(toSaver, Type.Clock.fontSize, 0.dp, drift)
+                .capBox(Type.Clock.fontSize),
+        )
+        Weather.now?.takeIf { AerialSettings.showWeather }?.let { w ->
+            val place = Weather.place?.takeIf { it.length <= 12 }
+            val range = if (w.high != null && w.low != null) stringResource(R.string.weather_high_low, w.high, w.low) else null
+            val detail = listOfNotNull(place, stringResource(conditionName(w.kind)), range).joinToString(" · ")
+            Row(aside.padding(top = 18.dp).capBox(Type.ClockDetail.fontSize), verticalAlignment = Alignment.CenterVertically) {
+                GlyphIcon(glyphFor(w), Color.White, 18.dp, Modifier.padding(end = 7.dp))
+                BasicText(
+                    buildAnnotatedString {
+                        append("${w.celsius}°")
+                        withStyle(SpanStyle(color = dim, fontWeight = FontWeight.W500)) { append("  $detail") }
+                    },
+                    style = Type.ClockDetail.copy(shadow = shadow),
                 )
-                Spacer(Modifier.width(16.dp))
-                Column {
-                    Weather.now?.takeIf { AerialSettings.showWeather }?.let { w ->
-                        val place = Weather.place
-                        val cond = stringResource(conditionName(w.kind))
-                        val temp = if (w.high != null && w.low != null) "${w.low}℃~${w.high}℃" else "${w.celsius}℃"
-                        BasicText(
-                            listOfNotNull(place, cond, temp).joinToString(" "),
-                            style = Type.ClockDate.copy(shadow = shadow),
-                        )
-                    }
-                    BasicText(
-                        buildAnnotatedString {
-                            append(dateText(now))
-                            val lunar = if (Locale.getDefault().language == "zh") Lunar.text(now.toLocalDate()) else null
-                            if (lunar != null) withStyle(SpanStyle(color = dim, fontWeight = FontWeight.W500)) { append("  $lunar") }
-                        },
-                        style = Type.ClockDate.copy(shadow = shadow),
-                        modifier = Modifier.padding(top = if (Weather.now?.takeIf { AerialSettings.showWeather } != null) 6.dp else 0.dp),
-                    )
-                }
             }
         }
     }
 }
-
 private fun greetingText(hour: Int): String = when (hour) {
     in 0..5 -> "晚上好"
     in 6..8 -> "早上好"
