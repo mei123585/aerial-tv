@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -106,7 +107,13 @@ fun LiveSourceMenu(
     val columns = 5
     val showAllNames = AerialSettings.showAllNames
 
-    androidx.compose.foundation.layout.BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+    val alpha = androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = androidx.compose.animation.core.tween(200),
+        label = "liveMenuAlpha",
+    )
+
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier = Modifier.fillMaxSize().alpha(alpha.value)) {
         val screenW = maxWidth
         val screenH = maxHeight
         val tileW = (screenW - gridMargin * 2 - gridGap * (columns - 1)) / columns

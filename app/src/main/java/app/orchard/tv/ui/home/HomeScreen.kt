@@ -443,6 +443,11 @@ fun HomeScreen(
                             // 音量键透传
                             NativeKeyEvent.KEYCODE_VOLUME_UP, NativeKeyEvent.KEYCODE_VOLUME_DOWN,
                             NativeKeyEvent.KEYCODE_VOLUME_MUTE -> return@onPreviewKeyEvent false
+                            // 主页键：回到一级菜单
+                            NativeKeyEvent.KEYCODE_HOME -> {
+                                if (overlay is Overlay.LiveSourceMenu) vm.overlay = Overlay.None
+                                uiHidden = false
+                            }
                             // 方向键/确认键：二级菜单开着就透传给卡片，没开才恢复UI
                             else -> {
                                 if (overlay is Overlay.LiveSourceMenu) return@onPreviewKeyEvent false
