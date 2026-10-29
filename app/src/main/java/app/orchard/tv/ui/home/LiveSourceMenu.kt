@@ -178,9 +178,10 @@ fun LiveSourceMenu(
                 androidx.compose.runtime.key(source.id) {
                     val xPx = with(density) { (gridMargin + (tileW + gridGap) * index).roundToPx() }
                     val yPx = with(density) { (screenH - bottomPad - tileH).roundToPx() }
+                    val targetOffset = IntOffset(xPx, yPx)
                     val animatedOffset by animateIntOffsetAsState(
-                        IntOffset(xPx, yPx),
-                        if (movingId != null) androidx.compose.animation.core.spring(dampingRatio = 1f, stiffness = Spring.StiffnessHigh)
+                        targetOffset,
+                        if (movingId == source.id) androidx.compose.animation.core.tween(0)
                         else spring(dampingRatio = 0.86f, stiffness = Spring.StiffnessMediumLow),
                         label = "slot",
                     )
