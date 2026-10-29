@@ -202,9 +202,7 @@ fun LiveSourceMenu(
                         modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 6.dp))
                     MenuRow(Glyph.Move, "移动", { movingId = source.id; menuForId = null }, focusRequester = first)
                     MenuRow(Glyph.EyeSlash, "从直播菜单隐藏", { onHide(source.id); menuForId = null })
-                    if (!source.isPreset) {
-                        MenuRow(Glyph.Trash, "删除", { onDelete(source.id); menuForId = null }, destructive = true)
-                    }
+                    MenuRow(Glyph.Trash, "删除", { onDelete(source.id); menuForId = null }, destructive = true)
                 }
             }
         }
