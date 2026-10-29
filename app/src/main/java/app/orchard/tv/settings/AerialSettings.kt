@@ -263,6 +263,10 @@ object AerialSettings {
 
     fun chooseLargeClock(on: Boolean) {
         largeClock = on
+        if (!on && clockRight) {
+            clockRight = false
+            app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putBoolean("clock_right", false) }
+        }
         app.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putBoolean("large_clock", on) }
     }
 

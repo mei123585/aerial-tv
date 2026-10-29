@@ -196,15 +196,18 @@ fun WallpaperSheet(
                     Spacer(Modifier.height(10.dp))
                     Group { note ->
                         Choices(
-                            R.string.st_clock, stringResource(R.string.st_clock_hint), note,
-                            listOf(false to R.string.st_clock_left, true to R.string.st_clock_right),
-                            AerialSettings.clockRight, AerialSettings::chooseClockRight, first = true,
-                        )
-                        Choices(
                             R.string.st_clock_size, stringResource(R.string.st_clock_size_hint), note,
                             listOf(false to R.string.st_clock_small, true to R.string.st_clock_large),
                             AerialSettings.largeClock, AerialSettings::chooseLargeClock,
                         )
+                        // 小时钟只能左上；大时钟可以选左上或右上
+                        if (AerialSettings.largeClock) {
+                            Choices(
+                                R.string.st_clock, stringResource(R.string.st_clock_hint), note,
+                                listOf(false to R.string.st_clock_left, true to R.string.st_clock_right),
+                                AerialSettings.clockRight, AerialSettings::chooseClockRight, first = true,
+                            )
+                        }
                         Choices(
                             R.string.wp_weather, null, note,
                             listOf(true to R.string.st_on, false to R.string.st_off),
