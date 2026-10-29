@@ -145,7 +145,7 @@ fun LiveSourceMenu(
                         width = tileW,
                         height = tileH,
                         focusRequester = focusRequesters[index],
-                        enabled = menuForId == null && movingIndex < 0,
+                        enabled = menuForId == null,
                         moving = movingIndex == index,
                         appearDelayMs = null,
                         onFocused = { focusedIndex = index; Sounds.focusMoved() },
@@ -155,6 +155,18 @@ fun LiveSourceMenu(
                         showName = showName,
                     )
                 }
+            }
+            // 移动模式提示
+            if (movingIndex >= 0) {
+                BasicText(
+                    "用方向键移动·按确定键完成",
+                    style = TextStyle(Color.White, fontSize = 14.sp),
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 28.dp)
+                        .liquidGlass(20.dp)
+                        .padding(horizontal = 20.dp, vertical = 10.dp),
+                )
             }
             if (menuForId != null) {
                 val source = sources.find { it.id == menuForId } ?: return@Box

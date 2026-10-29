@@ -82,7 +82,12 @@ fun ChannelFocusPreview(
             when (e) {
                 Lifecycle.Event.ON_STOP -> { player?.pause(); player?.volume = 0f }
                 Lifecycle.Event.ON_START -> {
-                    restartSignal++
+                    player?.let {
+                        it.playWhenReady = true
+                        it.volume = 1f
+                        it.prepare()
+                        it.seekToDefaultPosition()
+                    }
                 }
                 else -> {}
             }
