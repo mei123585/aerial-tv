@@ -39,20 +39,20 @@ fun ChannelFocusPreview(
     var surface by remember { mutableStateOf<TextureView?>(null) }
 
     var restartSignal by remember { mutableStateOf(0) }
-    var cachedStreamUrl by remember { mutableStateOf<String?>(null) }
+    val streamCache = remember { mutableMapOf<String, String>() }
     LaunchedEffect(source?.url, restartSignal) {
         player?.release()
         player = null
         if (source == null) return@LaunchedEffect
 
-        var streamUrl: String? = cachedStreamUrl
+        var streamUrl: String? = streamCache[source.url]
         if (streamUrl == null) {
             for (attempt in 1..10) {
                 streamUrl = withContext(Dispatchers.IO) { resolveStreamUrl(source) }
                 if (streamUrl != null) break
                 kotlinx.coroutines.delay(3000)
             }
-            cachedStreamUrl = streamUrl
+            streamCache[source.url] = streamUrl
         }
         DiagLog.i("channel preview: url = $streamUrl")
         if (streamUrl != null) {

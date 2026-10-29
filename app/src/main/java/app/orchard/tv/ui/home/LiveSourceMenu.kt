@@ -101,7 +101,7 @@ fun LiveSourceMenu(
         val screenH = maxHeight
         val tileW = (screenW - gridMargin * 2 - gridGap * (columns - 1)) / columns
         val tileH = tileW * 9f / 16f
-        val bottomPad = 70.dp
+        val bottomPad = 90.dp
 
         Box(
             modifier = Modifier
