@@ -39,7 +39,7 @@ fun ChannelFocusPreview(
     var surface by remember { mutableStateOf<TextureView?>(null) }
 
     var restartSignal by remember { mutableStateOf(0) }
-    val streamCache = remember { mutableMapOf<String, String>() }
+    val streamCache = remember { mutableMapOf<String, String?>() }
     LaunchedEffect(source?.url, restartSignal) {
         player?.release()
         player = null
