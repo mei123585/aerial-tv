@@ -45,14 +45,14 @@ fun ChannelFocusPreview(
         player = null
         if (source == null) return@LaunchedEffect
 
-        var streamUrl: String? = streamCache[source.url]
+        var streamUrl: String? = streamCache[source.url ?: ""]
         if (streamUrl == null) {
             for (attempt in 1..10) {
                 streamUrl = withContext(Dispatchers.IO) { resolveStreamUrl(source) }
                 if (streamUrl != null) break
                 kotlinx.coroutines.delay(3000)
             }
-            streamCache[source.url] = streamUrl
+            streamCache[source.url ?: ""] = streamUrl
         }
         DiagLog.i("channel preview: url = $streamUrl")
         if (streamUrl != null) {
