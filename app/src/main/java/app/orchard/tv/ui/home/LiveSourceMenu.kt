@@ -202,7 +202,7 @@ fun LiveSourceMenu(
                             width = tileW,
                             height = tileH,
                             focusRequester = requester(source.id),
-                            enabled = menuForId == null,
+                            enabled = menuForId == null && visible,
                             moving = movingId == source.id,
                             appearDelayMs = null,
                             onFocused = { focusedId = source.id; Sounds.focusMoved() },
