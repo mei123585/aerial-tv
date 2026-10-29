@@ -83,7 +83,6 @@ fun LiveSourceMenu(
     onDismiss: () -> Unit,
     onMenuOpenChange: (Boolean) -> Unit = {},
 ) {
-    if (!visible) return
     var focusedId by remember { mutableStateOf(currentId) }
     var menuForId by remember { mutableStateOf<String?>(null) }
     var movingId by remember { mutableStateOf<String?>(null) }
@@ -124,6 +123,11 @@ fun LiveSourceMenu(
             modifier = Modifier
                 .fillMaxSize()
                 .onPreviewKeyEvent { e ->
+                    if (!visible) return@onPreviewKeyEvent false
+                    if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_HOME && e.type == KeyEventType.KeyDown) {
+                        onDismiss()
+                        return@onPreviewKeyEvent true
+                    }
                     if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_MENU && e.type == KeyEventType.KeyUp && menuForId == null && movingId == null) {
                         requester(focusedId).requestFocus()
                         sources.find { it.id == focusedId }?.let { menuForId = it.id }
