@@ -78,7 +78,7 @@ fun LiveSourceMenu(
     val focusMap = remember { mutableMapOf<String, FocusRequester>() }
     LaunchedEffect(visible) {
         kotlinx.coroutines.delay(150)
-        sources.getOrNull(currentId)?.let { focusMap[it.id]?.requestFocus() }
+        sources.find { it.id == currentId }?.let { focusMap[it.id]?.requestFocus() }
     }
 
     val gridMargin = 56.dp
