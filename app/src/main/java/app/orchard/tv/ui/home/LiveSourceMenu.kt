@@ -135,7 +135,7 @@ fun LiveSourceMenu(
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(gridGap),
-                modifier = Modifier.padding(bottom = 80.dp).padding(horizontal = gridMargin),
+                modifier = Modifier.padding(bottom = 100.dp).padding(horizontal = gridMargin),
             ) {
                 sources.forEachIndexed { index, source ->
                     val app = remember(source.id, source.name) { liveSourceAppEntry(source) }
@@ -178,7 +178,7 @@ fun LiveSourceMenu(
                 val menuOffsetX = tileCenterX - (menuWidth / 2)
                 Column(
                     Modifier
-                        .padding(start = menuOffsetX, bottom = 80.dp + tileH + 20.dp)
+                        .padding(start = menuOffsetX, bottom = 100.dp + tileH + 20.dp)
                         .width(menuWidth)
                         .liquidGlass(20.dp)
                         .padding(8.dp),
@@ -189,6 +189,7 @@ fun LiveSourceMenu(
                     MenuRow(Glyph.Move, "移动", {
                         movingIndex = sourceIndex
                         menuForId = null
+                        focusRequesters.getOrNull(sourceIndex)?.requestFocus()
                     }, focusRequester = first)
                     MenuRow(Glyph.EyeSlash, "隐藏", { onHide(source.id); menuForId = null })
                     if (!source.isPreset) {

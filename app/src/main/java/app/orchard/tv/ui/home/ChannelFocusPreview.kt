@@ -39,16 +39,20 @@ fun ChannelFocusPreview(
     var surface by remember { mutableStateOf<TextureView?>(null) }
 
     var restartSignal by remember { mutableStateOf(0) }
+    var cachedStreamUrl by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(source?.url, restartSignal) {
         player?.release()
         player = null
         if (source == null) return@LaunchedEffect
 
-        var streamUrl: String? = null
-        for (attempt in 1..10) {
-            streamUrl = withContext(Dispatchers.IO) { resolveStreamUrl(source) }
-            if (streamUrl != null) break
-            kotlinx.coroutines.delay(3000)
+        var streamUrl: String? = cachedStreamUrl
+        if (streamUrl == null) {
+            for (attempt in 1..10) {
+                streamUrl = withContext(Dispatchers.IO) { resolveStreamUrl(source) }
+                if (streamUrl != null) break
+                kotlinx.coroutines.delay(3000)
+            }
+            cachedStreamUrl = streamUrl
         }
         DiagLog.i("channel preview: url = $streamUrl")
         if (streamUrl != null) {
@@ -82,12 +86,7 @@ fun ChannelFocusPreview(
             when (e) {
                 Lifecycle.Event.ON_STOP -> { player?.pause(); player?.volume = 0f }
                 Lifecycle.Event.ON_START -> {
-                    player?.let {
-                        it.playWhenReady = true
-                        it.volume = 1f
-                        it.prepare()
-                        it.seekToDefaultPosition()
-                    }
+                    restartSignal++
                 }
                 else -> {}
             }
