@@ -400,7 +400,9 @@ fun HomeScreen(
         if (windowFocused && vm.homeResetPending && vm.loaded) {
             withFrameNanos { }
             dragged = false
-            focusApp(0)
+            // HOME键：优先focus到jxiptv，没有就第一个
+            val jxIndex = apps.indexOfFirst { it.packageName == "com.jxiptv.softconsole" }
+            focusApp(if (jxIndex >= 0) jxIndex else 0)
             vm.homeResetPending = false
         }
     }

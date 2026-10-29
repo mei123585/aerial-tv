@@ -86,7 +86,13 @@ fun ChannelFocusPreview(
             when (e) {
                 Lifecycle.Event.ON_STOP -> { player?.pause(); player?.volume = 0f }
                 Lifecycle.Event.ON_START -> {
-                    restartSignal++
+                    // 先尝试直接恢复旧player，失败再重启
+                    player?.let {
+                        it.volume = 1f
+                        surface?.let { s -> it.setVideoTextureView(s) }
+                        it.prepare()
+                        it.playWhenReady = true
+                    } ?: run { restartSignal++ }
                 }
                 else -> {}
             }
