@@ -74,11 +74,10 @@ fun LiveSourceMenu(
     var focusedIndex by remember { mutableIntStateOf(currentIndex) }
     var menuForId by remember { mutableStateOf<String?>(null) }
     var movingId by remember { mutableStateOf<String?>(null) }
-    // 每个source.id对应一个FocusRequester
-    val focusMap = remember { mutableMapOf<String, FocusRequester>() }
+    val focusRequesters = remember { sources.map { FocusRequester() } }
     LaunchedEffect(visible) {
-        kotlinx.coroutines.delay(150)
-        sources.find { it.id == currentId }?.let { focusMap[it.id]?.requestFocus() }
+        kotlinx.coroutines.delay(200)
+        focusRequesters.getOrNull(currentIndex)?.requestFocus()
     }
 
     val gridMargin = 56.dp
@@ -127,14 +126,12 @@ fun LiveSourceMenu(
                 sources.forEachIndexed { index, source ->
                     val app = remember(source.id, source.name) { liveSourceAppEntry(source) }
                     val showName = showAllNames || index == focusedIndex
-                    val req = remember { FocusRequester() }
-                    LaunchedEffect(source.id) { focusMap[source.id] = req }
                     androidx.compose.runtime.key(source.id) {
                         AppTile(
                             app = app,
                             width = tileW,
                             height = tileH,
-                            focusRequester = req,
+                            focusRequester = focusRequesters[index],
                             enabled = menuForId == null,
                             moving = movingId == source.id,
                             appearDelayMs = null,
@@ -174,7 +171,7 @@ fun LiveSourceMenu(
                 ) {
                     BasicText(source.name, style = TextStyle(Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold),
                         modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 6.dp))
-                    MenuRow(Glyph.Move, "移动", { movingId = source.id; menuForId = null; focusMap[source.id]?.requestFocus() }, focusRequester = first)
+                    MenuRow(Glyph.Move, "移动", { movingId = source.id; menuForId = null; focusRequesters.getOrNull(sourceIndex)?.requestFocus() }, focusRequester = first)
                     MenuRow(Glyph.EyeSlash, "隐藏", { onHide(source.id); menuForId = null })
                     if (!source.isPreset) {
                         MenuRow(Glyph.Trash, "删除", { onDelete(source.id); menuForId = null }, destructive = true)
