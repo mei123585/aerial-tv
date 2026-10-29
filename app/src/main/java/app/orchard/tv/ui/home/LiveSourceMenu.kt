@@ -188,31 +188,30 @@ fun LiveSourceMenu(
                     }
                 }
                 val app = remember(fallback, artState.value) { fallback.copy(art = artState.value ?: fallback.art) }
-                {
-                    val xPx = with(density) { (gridMargin + (tileW + gridGap) * index).roundToPx() }
-                    val yPx = with(density) { (screenH - bottomPad - tileH).roundToPx() }
-                    val targetOffset = IntOffset(xPx, yPx)
-                    val animatedOffset by animateIntOffsetAsState(
-                        targetOffset,
-                        spring(dampingRatio = 0.9f, stiffness = Spring.StiffnessHigh),
-                        label = "slot",
+                val xPx = with(density) { (gridMargin + (tileW + gridGap) * index).roundToPx() }
+                val yPx = with(density) { (screenH - bottomPad - tileH).roundToPx() }
+                val targetOffset = IntOffset(xPx, yPx)
+                val animatedOffset by animateIntOffsetAsState(
+                    targetOffset,
+                    spring(dampingRatio = 0.9f, stiffness = Spring.StiffnessHigh),
+                    label = "slot",
+                )
+                Box(modifier = Modifier.offset { animatedOffset }) {
+                    AppTile(
+                        app = app,
+                        width = tileW,
+                        height = tileH,
+                        focusRequester = requester(source.id),
+                        enabled = menuForId == null && visible,
+                        moving = movingId == source.id,
+                        appearDelayMs = null,
+                        onFocused = { focusedId = source.id; Sounds.focusMoved() },
+                        onClick = { if (movingId == null) { onSelect(source.id); onDismiss() } },
+                        onLongPress = { if (movingId == null) menuForId = source.id },
+                        rowEnd = index == sources.size - 1,
+                        showName = showAllNames || focusedId == source.id,
                     )
-                    Box(modifier = Modifier.offset { animatedOffset }) {
-                        AppTile(
-                            app = app,
-                            width = tileW,
-                            height = tileH,
-                            focusRequester = requester(source.id),
-                            enabled = menuForId == null && visible,
-                            moving = movingId == source.id,
-                            appearDelayMs = null,
-                            onFocused = { focusedId = source.id; Sounds.focusMoved() },
-                            onClick = { if (movingId == null) { onSelect(source.id); onDismiss() } },
-                            onLongPress = { if (movingId == null) menuForId = source.id },
-                            rowEnd = index == sources.size - 1,
-                            showName = showAllNames || focusedId == source.id,
-                        )
-                    }
+                }
                 }
             }
             if (movingId != null) {
