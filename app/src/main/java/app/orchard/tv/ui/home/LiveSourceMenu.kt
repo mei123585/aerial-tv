@@ -93,6 +93,8 @@ fun LiveSourceMenu(
     }
     LaunchedEffect(menuForId) { onMenuOpenChange(menuForId != null) }
     LaunchedEffect(movingId) { onMovingChange(movingId != null) }
+    val requesters = remember { HashMap<String, FocusRequester>() }
+    fun requester(id: String) = requesters.getOrPut(id) { FocusRequester() }
     // 上下文菜单关闭后焦点回到原卡片
     var lastMenuId by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(menuForId) {
@@ -103,8 +105,6 @@ fun LiveSourceMenu(
             lastMenuId = null
         }
     }
-    val requesters = remember { HashMap<String, FocusRequester>() }
-    fun requester(id: String) = requesters.getOrPut(id) { FocusRequester() }
     val density = LocalDensity.current
 
     LaunchedEffect(visible) {
