@@ -231,6 +231,7 @@ fun HomeScreen(
 
 // ===== 直播预览和UI隐藏状态 =====
     var uiHidden by remember { mutableStateOf(false) }
+    var liveMenuOpen by remember { mutableStateOf(false) }
     var lastKeyTime by remember { mutableStateOf(0L) }
     val focusedPkg = apps.getOrNull(focusedIndex)?.packageName ?: ""
     val channelPreviewVisible = AerialSettings.livePreviewEnabled &&
@@ -239,13 +240,13 @@ fun HomeScreen(
         !vm.screensaverVisible && moving == null
     LaunchedEffect(channelPreviewVisible) { vm.livePlaying = channelPreviewVisible }
     // 10秒无操作自动隐藏UI（一级和二级菜单都生效）
-    LaunchedEffect(focusedPkg, overlay, uiHidden, lastKeyTime, channelPreviewVisible) {
+    LaunchedEffect(focusedPkg, overlay, uiHidden, lastKeyTime, channelPreviewVisible, liveMenuOpen) {
         if (channelPreviewVisible && focusedPkg == "com.jxiptv.softconsole" && overlay == Overlay.None && !uiHidden) {
             delay(10_000)
             uiHidden = true
         }
-        // 二级菜单打开时也10秒自动隐藏
-        if (overlay is Overlay.LiveSourceMenu) {
+        // 二级菜单打开时也10秒自动隐藏（上下文菜单打开时不自动隐藏）
+        if (overlay is Overlay.LiveSourceMenu && !liveMenuOpen) {
             delay(10_000)
             vm.overlay = Overlay.None
             uiHidden = true // 二级菜单超时关闭也回到隐藏状态
@@ -1042,6 +1043,7 @@ val target = with(density) { metrics.scrollFor(if (inGrid) focusedRow else 0, ro
             onHide = { vm.hideLiveSource(it) },
             onDelete = { vm.removeLiveSource(it) },
             onDismiss = { vm.overlay = Overlay.None },
+            onMenuOpenChange = { liveMenuOpen = it },
         )
     }
 }

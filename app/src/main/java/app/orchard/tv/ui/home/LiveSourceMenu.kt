@@ -80,11 +80,13 @@ fun LiveSourceMenu(
     onHide: (String) -> Unit,
     onDelete: (String) -> Unit,
     onDismiss: () -> Unit,
+    onMenuOpenChange: (Boolean) -> Unit = {},
 ) {
     if (!visible) return
     var focusedId by remember { mutableStateOf(currentId) }
     var menuForId by remember { mutableStateOf<String?>(null) }
     var movingId by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(menuForId) { onMenuOpenChange(menuForId != null) }
     val requesters = remember { HashMap<String, FocusRequester>() }
     fun requester(id: String) = requesters.getOrPut(id) { FocusRequester() }
     val density = LocalDensity.current
@@ -199,7 +201,7 @@ fun LiveSourceMenu(
                     BasicText(source.name, style = TextStyle(Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold),
                         modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 6.dp))
                     MenuRow(Glyph.Move, "移动", { movingId = source.id; menuForId = null }, focusRequester = first)
-                    MenuRow(Glyph.EyeSlash, "隐藏", { onHide(source.id); menuForId = null })
+                    MenuRow(Glyph.EyeSlash, "从直播菜单隐藏", { onHide(source.id); menuForId = null })
                     if (!source.isPreset) {
                         MenuRow(Glyph.Trash, "删除", { onDelete(source.id); menuForId = null }, destructive = true)
                     }
