@@ -256,6 +256,10 @@ fun HomeScreen(
             uiHidden = true
         }
     }
+    // HOME键或onHomePressed关闭overlay时，恢复UI显示
+    LaunchedEffect(vm.overlay) {
+        if (vm.overlay == Overlay.None && uiHidden) uiHidden = false
+    }
     // The aerial wallpaper's film, and how far it shows through.
     val filmCover = remember { Animatable(0f) }
     val liveFilm = remember { LiveFilm() }
