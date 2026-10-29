@@ -429,9 +429,10 @@ fun HomeScreen(
                 if (channelPreviewVisible && uiHidden && focusedPkg == "com.jxiptv.softconsole") {
                     if (e.type == KeyEventType.KeyDown) {
                         when (e.nativeKeyEvent.keyCode) {
-                            // 菜单键：二级菜单没开就开，开了就关
+                            // 菜单键：二级菜单没开就开，开了就透传给卡片呼出上下文菜单
                             NativeKeyEvent.KEYCODE_MENU -> {
-                                vm.overlay = if (overlay is Overlay.LiveSourceMenu) Overlay.None else Overlay.LiveSourceMenu
+                                if (overlay is Overlay.LiveSourceMenu) return@onPreviewKeyEvent false
+                                vm.overlay = Overlay.LiveSourceMenu
                             }
                             // 返回键：二级菜单开着就透传给BackHandler关菜单，没开才恢复UI
                             NativeKeyEvent.KEYCODE_BACK -> {

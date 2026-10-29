@@ -123,6 +123,7 @@ fun LiveSourceMenu(
                                 true
                             }
                             e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_CENTER && e.type == KeyEventType.KeyUp -> {
+                                focusRequesters.getOrNull(movingIndex)?.requestFocus()
                                 movingIndex = -1
                                 true
                             }
@@ -134,7 +135,7 @@ fun LiveSourceMenu(
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(gridGap),
-                modifier = Modifier.padding(bottom = 120.dp).padding(horizontal = gridMargin),
+                modifier = Modifier.padding(bottom = 40.dp).padding(horizontal = gridMargin),
             ) {
                 sources.forEachIndexed { index, source ->
                     val app = remember(source.id, source.name) { liveSourceAppEntry(source) }
@@ -166,7 +167,7 @@ fun LiveSourceMenu(
                 val menuOffsetX = tileCenterX - (menuWidth / 2)
                 Column(
                     Modifier
-                        .padding(start = menuOffsetX, bottom = 120.dp + tileH + 20.dp)
+                        .padding(start = menuOffsetX, bottom = 40.dp + tileH + 20.dp)
                         .width(menuWidth)
                         .liquidGlass(20.dp)
                         .padding(8.dp),

@@ -38,12 +38,12 @@ fun ChannelFocusPreview(
     var player by remember { mutableStateOf<ExoPlayer?>(null) }
     var surface by remember { mutableStateOf<TextureView?>(null) }
 
-    LaunchedEffect(source?.url) {
+    var restartSignal by remember { mutableStateOf(0) }
+    LaunchedEffect(source?.url, restartSignal) {
         player?.release()
         player = null
         if (source == null) return@LaunchedEffect
 
-        // 重试：开机时可能没网，联网后自动恢复
         var streamUrl: String? = null
         for (attempt in 1..10) {
             streamUrl = withContext(Dispatchers.IO) { resolveStreamUrl(source) }
@@ -82,12 +82,7 @@ fun ChannelFocusPreview(
             when (e) {
                 Lifecycle.Event.ON_STOP -> { player?.pause(); player?.volume = 0f }
                 Lifecycle.Event.ON_START -> {
-                    player?.let {
-                        it.playWhenReady = true
-                        it.volume = 1f
-                        it.prepare()
-                        it.seekToDefaultPosition()
-                    }
+                    restartSignal++
                 }
                 else -> {}
             }
