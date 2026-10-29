@@ -175,7 +175,11 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             }
         }.getOrDefault(emptyList())
         // 如果有保存的列表（包含预设源），直接用；否则用默认预设
-        liveSources = if (saved.any { it.isPreset }) saved else presetLiveSources + saved.filter { !it.isPreset }
+        val base = if (saved.any { it.isPreset }) saved else presetLiveSources + saved.filter { !it.isPreset }
+        // 补充新增的预设源（用户升级后旧列表缺少新预设）
+        val haveIds = base.map { it.id }.toSet()
+        val missing = presetLiveSources.filter { it.id !in haveIds }
+        liveSources = if (missing.isNotEmpty()) base + missing else base
     }
 
     fun getAllLiveSources(): List<LiveSource> = liveSources

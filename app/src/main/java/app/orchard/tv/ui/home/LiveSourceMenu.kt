@@ -148,7 +148,12 @@ fun LiveSourceMenu(
                         true
                     } else if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_BACK && e.type == KeyEventType.KeyUp) {
                         when {
-                            menuForId != null -> { menuForId = null; true }
+                            menuForId != null -> {
+                                val id = menuForId
+                                menuForId = null
+                                id?.let { runCatching { requester(it).requestFocus() } }
+                                true
+                            }
                             movingId != null -> { movingId = null; true }
                             else -> false
                         }
@@ -188,8 +193,7 @@ fun LiveSourceMenu(
                     val targetOffset = IntOffset(xPx, yPx)
                     val animatedOffset by animateIntOffsetAsState(
                         targetOffset,
-                        if (movingId == source.id) androidx.compose.animation.core.tween(0)
-                        else spring(dampingRatio = 0.86f, stiffness = Spring.StiffnessMediumLow),
+                        spring(dampingRatio = 0.9f, stiffness = Spring.StiffnessHigh),
                         label = "slot",
                     )
                     Box(modifier = Modifier.offset { animatedOffset }) {
