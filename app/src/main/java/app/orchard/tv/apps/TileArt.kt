@@ -213,6 +213,24 @@ object TileArtFactory {
      */
     fun forSystem(kind: SystemTile): TileArt = glyphTile(kind.top, kind.bottom, kind.glyph)
 
+    /** A tile with a drawable resource centered on a gradient background. */
+    fun bitmapTile(res: Drawable, top: Int, bottom: Int): TileArt {
+        val back = colorTile(top, bottom)
+        val size = (H * 0.6f).toInt()
+        val icon = createBitmap(size, size)
+        val scale = max(size.toFloat() / (res.intrinsicWidth.takeIf { it > 0 } ?: size),
+                        size.toFloat() / (res.intrinsicHeight.takeIf { it > 0 } ?: size))
+        val dw = ((res.intrinsicWidth.takeIf { it > 0 } ?: size) * scale).roundToInt()
+        val dh = ((res.intrinsicHeight.takeIf { it > 0 } ?: size) * scale).roundToInt()
+        res.setBounds((size - dw) / 2, (size - dh) / 2, (size - dw) / 2 + dw, (size - dh) / 2 + dh)
+        res.draw(Canvas(icon))
+        val fore = layer {
+            drawBitmap(icon, (W - size) / 2f, (H - size) / 2f, Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG))
+        }
+        icon.recycle()
+        return finish(back, fore)
+    }
+
     /** One of Aerial's own glyphs in white over [top] to [bottom]; also for [TileRecipe.glyph]. */
     fun glyphTile(top: Int, bottom: Int, glyph: Glyph): TileArt {
         val back = colorTile(top, bottom)

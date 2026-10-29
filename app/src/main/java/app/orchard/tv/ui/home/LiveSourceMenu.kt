@@ -50,9 +50,16 @@ private val liveColors = listOf(
     Pair(0xFF00796B.toInt(), 0xFF004D40.toInt()),
 )
 
-private fun liveSourceAppEntry(source: LiveSource): AppEntry {
+private fun liveSourceAppEntry(source: LiveSource, ctx: android.content.Context): AppEntry {
     val (top, bottom) = liveColors[source.colorIndex % liveColors.size]
-    val art = TileArtFactory.glyphTile(top, bottom, Glyph.Play)
+    fun resTile(resId: Int) = runCatching { TileArtFactory.bitmapTile(ctx.getDrawable(resId)!!, top, bottom) }.getOrNull()
+    val art = when (source.id) {
+        "preset_0" -> resTile(app.orchard.tv.R.drawable.live_cctv)
+        "preset_1" -> resTile(app.orchard.tv.R.drawable.live_yangshipin)
+        "preset_2" -> resTile(app.orchard.tv.R.drawable.live_cctvkuikan)
+        "preset_3" -> resTile(app.orchard.tv.R.drawable.live_kuikan)
+        else -> null
+    } ?: TileArtFactory.glyphTile(top, bottom, Glyph.Play)
     return AppEntry(
         packageName = "live_${source.id}",
         label = source.name,
@@ -91,6 +98,7 @@ fun LiveSourceMenu(
         movingId?.let { kotlinx.coroutines.delay(50); runCatching { requester(it).requestFocus() } }
     }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
     val gridMargin = 56.dp
     val gridGap = 28.dp
     val columns = 5
@@ -136,7 +144,7 @@ fun LiveSourceMenu(
         ) {
             // 绝对定位每个卡片，带位置动画（完全照搬一级菜单）
             sources.forEachIndexed { index, source ->
-                val app = remember(source.id, source.name) { liveSourceAppEntry(source) }
+                val app = remember(source.id, source.name) { liveSourceAppEntry(source, context) }
                 androidx.compose.runtime.key(source.id) {
                     val xPx = with(density) { (gridMargin + (tileW + gridGap) * index).roundToPx() }
                     val yPx = with(density) { (screenH - bottomPad - tileH).roundToPx() }
