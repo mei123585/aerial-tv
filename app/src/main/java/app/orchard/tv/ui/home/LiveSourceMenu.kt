@@ -24,7 +24,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -75,6 +75,7 @@ fun LiveSourceMenu(
     val currentIndex = sources.indexOfFirst { it.id == currentId }.coerceAtLeast(0)
     var focusedIndex by remember { mutableIntStateOf(currentIndex) }
     var menuForId by remember { mutableStateOf<String?>(null) }
+    var movingIndex by remember { mutableIntStateOf(-1) } // 移动模式
     val focusRequesters = remember { List(sources.size) { FocusRequester() } }
     LaunchedEffect(visible) {
         kotlinx.coroutines.delay(150)
@@ -84,7 +85,7 @@ fun LiveSourceMenu(
     val gridMargin = 56.dp
     val gridGap = 28.dp
     val columns = 5
-    val showNames = AerialSettings.showAllNames
+    val showAllNames = AerialSettings.showAllNames
 
     androidx.compose.foundation.layout.BoxWithConstraints(
         modifier = Modifier.fillMaxSize(),
@@ -95,36 +96,63 @@ fun LiveSourceMenu(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .onKeyEvent { e ->
-                    if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_MENU && e.type == KeyEventType.KeyUp && menuForId == null) {
+                .onPreviewKeyEvent { e ->
+                    // 菜单键：呼出当前卡片上下文菜单（拦截，不让HomeScreen隐藏UI）
+                    if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_MENU && e.type == KeyEventType.KeyUp && menuForId == null && movingIndex < 0) {
                         sources.getOrNull(focusedIndex)?.let { menuForId = it.id }
                         true
-                    } else if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_BACK && e.type == KeyEventType.KeyUp && menuForId != null) {
-                        menuForId = null
-                        true
+                    } else if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_BACK && e.type == KeyEventType.KeyUp) {
+                        when {
+                            menuForId != null -> { menuForId = null; true }
+                            movingIndex >= 0 -> { movingIndex = -1; true }
+                            else -> false
+                        }
+                    } else if (movingIndex >= 0) {
+                        // 移动模式：方向键移动，OK完成
+                        when {
+                            e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_LEFT && e.type == KeyEventType.KeyUp && movingIndex > 0 -> {
+                                onMove(movingIndex, movingIndex - 1)
+                                movingIndex--
+                                focusedIndex = movingIndex
+                                true
+                            }
+                            e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_RIGHT && e.type == KeyEventType.KeyUp && movingIndex < sources.size - 1 -> {
+                                onMove(movingIndex, movingIndex + 1)
+                                movingIndex++
+                                focusedIndex = movingIndex
+                                true
+                            }
+                            e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_CENTER && e.type == KeyEventType.KeyUp -> {
+                                movingIndex = -1
+                                true
+                            }
+                            else -> true
+                        }
                     } else false
                 },
             contentAlignment = Alignment.BottomStart,
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(gridGap),
-                modifier = Modifier.padding(bottom = 80.dp).padding(horizontal = gridMargin),
+                modifier = Modifier.padding(bottom = 120.dp).padding(horizontal = gridMargin),
             ) {
                 sources.forEachIndexed { index, source ->
                     val app = remember(source.id, source.name) { liveSourceAppEntry(source) }
+                    // 只显示选中的：焦点卡片显示名称，其他不显示
+                    val showName = showAllNames || index == focusedIndex
                     AppTile(
                         app = app,
                         width = tileW,
                         height = tileH,
                         focusRequester = focusRequesters[index],
                         enabled = menuForId == null,
-                        moving = false,
+                        moving = movingIndex == index,
                         appearDelayMs = null,
                         onFocused = { focusedIndex = index; Sounds.focusMoved() },
-                        onClick = { onSelect(source.id); onDismiss() },
-                        onLongPress = { menuForId = source.id },
+                        onClick = { if (movingIndex < 0) { onSelect(source.id); onDismiss() } },
+                        onLongPress = { if (movingIndex < 0) menuForId = source.id },
                         rowEnd = index == sources.size - 1,
-                        showName = showNames,
+                        showName = showName,
                     )
                 }
             }
@@ -133,13 +161,12 @@ fun LiveSourceMenu(
                 val sourceIndex = sources.indexOf(source)
                 val first = remember { FocusRequester() }
                 LaunchedEffect(menuForId) { first.requestFocus() }
-                // 菜单在焦点卡片正上方
                 val tileCenterX = gridMargin + (tileW + gridGap) * sourceIndex + (tileW / 2)
                 val menuWidth = 250.dp
                 val menuOffsetX = tileCenterX - (menuWidth / 2)
                 Column(
                     Modifier
-                        .padding(start = menuOffsetX, bottom = 80.dp + tileH + 20.dp)
+                        .padding(start = menuOffsetX, bottom = 120.dp + tileH + 20.dp)
                         .width(menuWidth)
                         .liquidGlass(20.dp)
                         .padding(8.dp),
@@ -148,7 +175,7 @@ fun LiveSourceMenu(
                     BasicText(source.name, style = TextStyle(Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold),
                         modifier = Modifier.padding(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 6.dp))
                     MenuRow(Glyph.Move, "移动", {
-                        if (sourceIndex > 0) onMove(sourceIndex, sourceIndex - 1)
+                        movingIndex = sourceIndex
                         menuForId = null
                     }, focusRequester = first)
                     MenuRow(Glyph.EyeSlash, "隐藏", { onHide(source.id); menuForId = null })
