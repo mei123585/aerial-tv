@@ -86,6 +86,13 @@ fun LiveSourceMenu(
     var focusedId by remember { mutableStateOf(currentId) }
     var menuForId by remember { mutableStateOf<String?>(null) }
     var movingId by remember { mutableStateOf<String?>(null) }
+    var ignoreMenuKeyUp by remember { mutableStateOf(true) }
+    LaunchedEffect(visible) {
+        if (visible) {
+            kotlinx.coroutines.delay(500)
+            ignoreMenuKeyUp = false
+        }
+    }
     LaunchedEffect(menuForId) { onMenuOpenChange(menuForId != null) }
     val requesters = remember { HashMap<String, FocusRequester>() }
     fun requester(id: String) = requesters.getOrPut(id) { FocusRequester() }
@@ -108,7 +115,7 @@ fun LiveSourceMenu(
 
     val alpha = androidx.compose.animation.core.animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
-        animationSpec = androidx.compose.animation.core.tween(200),
+        animationSpec = androidx.compose.animation.core.tween(300),
         label = "liveMenuAlpha",
     )
 
@@ -128,7 +135,7 @@ fun LiveSourceMenu(
                         onDismiss()
                         return@onPreviewKeyEvent true
                     }
-                    if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_MENU && e.type == KeyEventType.KeyUp && menuForId == null && movingId == null) {
+                    if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_MENU && e.type == KeyEventType.KeyUp && menuForId == null && movingId == null && !ignoreMenuKeyUp) {
                         requester(focusedId).requestFocus()
                         sources.find { it.id == focusedId }?.let { menuForId = it.id }
                         true
@@ -173,7 +180,7 @@ fun LiveSourceMenu(
                     val yPx = with(density) { (screenH - bottomPad - tileH).roundToPx() }
                     val animatedOffset by animateIntOffsetAsState(
                         IntOffset(xPx, yPx),
-                        if (movingId != null) spring(dampingRatio = 0.9f, stiffness = Spring.StiffnessHigh)
+                        if (movingId != null) androidx.compose.animation.core.spring(dampingRatio = 1f, stiffness = Spring.StiffnessHigh)
                         else spring(dampingRatio = 0.86f, stiffness = Spring.StiffnessMediumLow),
                         label = "slot",
                     )

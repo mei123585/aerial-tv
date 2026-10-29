@@ -231,6 +231,9 @@ fun HomeScreen(
 
 // ===== 直播预览和UI隐藏状态 =====
     var uiHidden by remember { mutableStateOf(false) }
+    val uiAlpha by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (uiHidden) 0f else 1f,
+        animationSpec = androidx.compose.animation.core.tween(250), label = "uiAlpha")
     var liveMenuOpen by remember { mutableStateOf(false) }
     var lastKeyTime by remember { mutableStateOf(0L) }
     val focusedPkg = apps.getOrNull(focusedIndex)?.packageName ?: ""
@@ -688,8 +691,8 @@ val target = with(density) { metrics.scrollFor(if (inGrid) focusedRow else 0, ro
                     .fillMaxSize()
                     .offset { IntOffset(0, -scroll.value.roundToInt()) }
                     .graphicsLayer {
-                        // UI隐藏时隐藏所有应用图标和时钟
-                        if (channelPreviewVisible && uiHidden) alpha = 0f
+                        // UI隐藏时隐藏所有应用图标和时钟（带过渡动画）
+                        if (channelPreviewVisible) alpha = uiAlpha
                     }
                     .then(
                         if (shedUnderPanel) Modifier.graphicsLayer {
