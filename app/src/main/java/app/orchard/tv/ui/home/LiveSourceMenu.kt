@@ -176,6 +176,7 @@ fun LiveSourceMenu(
         ) {
             // 绝对定位每个卡片，带位置动画（完全照搬一级菜单）
             sources.forEachIndexed { index, source ->
+                androidx.compose.runtime.key(source.id) {
                 val fallback = remember(source.id, source.name) { liveSourceAppEntry(source, context) }
                 val artState = androidx.compose.runtime.produceState<app.orchard.tv.apps.TileArt?>(initialValue = fallback.art, source.id, source.name) {
                     val resId = liveSourceIconResId(source)
@@ -187,7 +188,7 @@ fun LiveSourceMenu(
                     }
                 }
                 val app = remember(fallback, artState.value) { fallback.copy(art = artState.value ?: fallback.art) }
-                androidx.compose.runtime.key(source.id) {
+                {
                     val xPx = with(density) { (gridMargin + (tileW + gridGap) * index).roundToPx() }
                     val yPx = with(density) { (screenH - bottomPad - tileH).roundToPx() }
                     val targetOffset = IntOffset(xPx, yPx)

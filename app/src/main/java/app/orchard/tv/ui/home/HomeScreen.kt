@@ -256,10 +256,6 @@ fun HomeScreen(
             uiHidden = true
         }
     }
-    // HOME键或onHomePressed关闭overlay时，恢复UI显示
-    LaunchedEffect(vm.overlay) {
-        if (vm.overlay == Overlay.None && uiHidden) uiHidden = false
-    }
     // The aerial wallpaper's film, and how far it shows through.
     val filmCover = remember { Animatable(0f) }
     val liveFilm = remember { LiveFilm() }
@@ -434,6 +430,12 @@ fun HomeScreen(
             .fillMaxSize()
             .onPreviewKeyEvent { e ->
                 lastKeyTime = System.currentTimeMillis()
+                // HOME键：任何时候UI隐藏时按HOME都显示一级菜单
+                if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_HOME && e.type == KeyEventType.KeyDown && uiHidden) {
+                    if (overlay is Overlay.LiveSourceMenu) vm.overlay = Overlay.None
+                    uiHidden = false
+                    return@onPreviewKeyEvent true
+                }
                 // ===== UI隐藏时按键逻辑 =====
                 if (channelPreviewVisible && uiHidden && focusedPkg == "com.jxiptv.softconsole") {
                     if (e.type == KeyEventType.KeyDown) {
