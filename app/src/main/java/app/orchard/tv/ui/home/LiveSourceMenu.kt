@@ -147,7 +147,7 @@ fun LiveSourceMenu(
             sources.forEachIndexed { index, source ->
                 val app = remember(source.id, source.name) { liveSourceAppEntry(source) }
                 val showName = showAllNames || index == focusedIndex
-                val xPx = with(density) { (gridMargin + index * (tileW + gridGap)).roundToPx() }
+                val xPx = with(density) { (gridMargin + (tileW + gridGap) * index).roundToPx() }
                 val yPx = with(density) { (screenH - bottomOffset - tileH).roundToPx() }
                 val animatedOffset by animateIntOffsetAsState(
                     IntOffset(xPx, yPx),
