@@ -173,7 +173,8 @@ fun LiveSourceMenu(
                     val yPx = with(density) { (screenH - bottomPad - tileH).roundToPx() }
                     val animatedOffset by animateIntOffsetAsState(
                         IntOffset(xPx, yPx),
-                        spring(dampingRatio = 0.86f, stiffness = Spring.StiffnessMediumLow),
+                        if (movingId != null) spring(dampingRatio = 0.9f, stiffness = Spring.StiffnessHigh)
+                        else spring(dampingRatio = 0.86f, stiffness = Spring.StiffnessMediumLow),
                         label = "slot",
                     )
                     Box(modifier = Modifier.offset { animatedOffset }) {
