@@ -158,9 +158,8 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     init {
         val prefs = context.getSharedPreferences("live_sources", android.content.Context.MODE_PRIVATE)
         currentLiveSourceId = prefs.getString("selected_id", "preset_0") ?: "preset_0"
-        // 读取自定义源列表（JSON数组）
         val customJson = prefs.getString("custom_list", "[]") ?: "[]"
-        val customs = runCatching {
+        val saved = runCatching {
             val arr = org.json.JSONArray(customJson)
             (0 until arr.length()).map { i ->
                 val o = arr.getJSONObject(i)
@@ -169,12 +168,13 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
                     name = o.getString("name"),
                     url = o.getString("url"),
                     isBilibili = o.optBoolean("isBilibili", true),
-                    isPreset = false,
+                    isPreset = o.optBoolean("isPreset", false),
                     colorIndex = o.optInt("colorIndex", 0),
                 )
             }
         }.getOrDefault(emptyList())
-        liveSources = presetLiveSources + customs
+        // 如果有保存的列表（包含预设源），直接用；否则用默认预设
+        liveSources = if (saved.any { it.isPreset }) saved else presetLiveSources + saved.filter { !it.isPreset }
     }
 
     fun getAllLiveSources(): List<LiveSource> = liveSources
