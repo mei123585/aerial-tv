@@ -135,18 +135,17 @@ fun LiveSourceMenu(
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(gridGap),
-                modifier = Modifier.padding(bottom = 40.dp).padding(horizontal = gridMargin),
+                modifier = Modifier.padding(bottom = 80.dp).padding(horizontal = gridMargin),
             ) {
                 sources.forEachIndexed { index, source ->
                     val app = remember(source.id, source.name) { liveSourceAppEntry(source) }
-                    // 只显示选中的：焦点卡片显示名称，其他不显示
                     val showName = showAllNames || index == focusedIndex
                     AppTile(
                         app = app,
                         width = tileW,
                         height = tileH,
                         focusRequester = focusRequesters[index],
-                        enabled = menuForId == null,
+                        enabled = menuForId == null && movingIndex < 0,
                         moving = movingIndex == index,
                         appearDelayMs = null,
                         onFocused = { focusedIndex = index; Sounds.focusMoved() },
@@ -167,7 +166,7 @@ fun LiveSourceMenu(
                 val menuOffsetX = tileCenterX - (menuWidth / 2)
                 Column(
                     Modifier
-                        .padding(start = menuOffsetX, bottom = 40.dp + tileH + 20.dp)
+                        .padding(start = menuOffsetX, bottom = 80.dp + tileH + 20.dp)
                         .width(menuWidth)
                         .liquidGlass(20.dp)
                         .padding(8.dp),
