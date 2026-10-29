@@ -2,12 +2,15 @@ package app.orchard.tv.ui.home
 
 import android.content.ComponentName
 import android.view.KeyEvent as NativeKeyEvent
-import androidx.compose.foundation.focusable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateIntOffsetAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.BasicText
@@ -20,14 +23,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.orchard.tv.LiveSource
@@ -37,6 +43,7 @@ import app.orchard.tv.settings.AerialSettings
 import app.orchard.tv.system.Sounds
 import app.orchard.tv.ui.components.liquidGlass
 import app.orchard.tv.ui.theme.Glyph
+import kotlin.math.roundToInt
 
 private val liveColors = listOf(
     Pair(0xFFD32F2F.toInt(), 0xFF8E0000.toInt()),
@@ -75,7 +82,7 @@ fun LiveSourceMenu(
     val currentIndex = sources.indexOfFirst { it.id == currentId }.coerceAtLeast(0)
     var focusedIndex by remember { mutableIntStateOf(currentIndex) }
     var menuForId by remember { mutableStateOf<String?>(null) }
-    var movingIndex by remember { mutableIntStateOf(-1) } // 移动模式
+    var movingIndex by remember { mutableIntStateOf(-1) }
     val focusRequesters = remember { List(sources.size) { FocusRequester() } }
     LaunchedEffect(visible) {
         kotlinx.coroutines.delay(150)
@@ -86,18 +93,21 @@ fun LiveSourceMenu(
     val gridGap = 28.dp
     val columns = 5
     val showAllNames = AerialSettings.showAllNames
+    val density = LocalDensity.current
 
     androidx.compose.foundation.layout.BoxWithConstraints(
         modifier = Modifier.fillMaxSize(),
     ) {
         val screenW = maxWidth
+        val screenH = maxHeight
         val tileW = (screenW - gridMargin * 2 - gridGap * (columns - 1)) / columns
         val tileH = tileW * 9f / 16f
+        val bottomOffset = 100.dp
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .onPreviewKeyEvent { e ->
-                    // 菜单键：呼出当前卡片上下文菜单（拦截，不让HomeScreen隐藏UI）
                     if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_MENU && e.type == KeyEventType.KeyUp && menuForId == null && movingIndex < 0) {
                         sources.getOrNull(focusedIndex)?.let { menuForId = it.id }
                         true
@@ -108,18 +118,19 @@ fun LiveSourceMenu(
                             else -> false
                         }
                     } else if (movingIndex >= 0) {
-                        // 移动模式：方向键移动，OK完成
                         when {
                             e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_LEFT && e.type == KeyEventType.KeyUp && movingIndex > 0 -> {
                                 onMove(movingIndex, movingIndex - 1)
                                 movingIndex--
                                 focusedIndex = movingIndex
+                                focusRequesters.getOrNull(movingIndex)?.requestFocus()
                                 true
                             }
                             e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_RIGHT && e.type == KeyEventType.KeyUp && movingIndex < sources.size - 1 -> {
                                 onMove(movingIndex, movingIndex + 1)
                                 movingIndex++
                                 focusedIndex = movingIndex
+                                focusRequesters.getOrNull(movingIndex)?.requestFocus()
                                 true
                             }
                             e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_CENTER && e.type == KeyEventType.KeyUp -> {
@@ -131,34 +142,38 @@ fun LiveSourceMenu(
                         }
                     } else false
                 },
-            contentAlignment = Alignment.BottomStart,
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(gridGap),
-                modifier = Modifier.padding(bottom = 100.dp).padding(horizontal = gridMargin),
-            ) {
-                sources.forEachIndexed { index, source ->
-                    val app = remember(source.id, source.name) { liveSourceAppEntry(source) }
-                    val showName = showAllNames || index == focusedIndex
-                    androidx.compose.runtime.key(source.id) {
-                    AppTile(
-                        app = app,
-                        width = tileW,
-                        height = tileH,
-                        focusRequester = focusRequesters[index],
-                        enabled = menuForId == null,
-                        moving = movingIndex == index,
-                        appearDelayMs = null,
-                        onFocused = { focusedIndex = index; Sounds.focusMoved() },
-                        onClick = { if (movingIndex < 0) { onSelect(source.id); onDismiss() } },
-                        onLongPress = { if (movingIndex < 0) menuForId = source.id },
-                        rowEnd = index == sources.size - 1,
-                        showName = showName,
-                    )
+            // 绝对定位每个卡片，带位置动画
+            sources.forEachIndexed { index, source ->
+                val app = remember(source.id, source.name) { liveSourceAppEntry(source) }
+                val showName = showAllNames || index == focusedIndex
+                val xPx = with(density) { (gridMargin + index * (tileW + gridGap)).roundToPx() }
+                val yPx = with(density) { (screenH - bottomOffset - tileH).roundToPx() }
+                val animatedOffset by animateIntOffsetAsState(
+                    IntOffset(xPx, yPx),
+                    spring(dampingRatio = 0.86f, stiffness = Spring.StiffnessMediumLow),
+                    label = "tileSlot",
+                )
+                androidx.compose.runtime.key(source.id) {
+                    Box(modifier = Modifier.offset { animatedOffset }) {
+                        AppTile(
+                            app = app,
+                            width = tileW,
+                            height = tileH,
+                            focusRequester = focusRequesters[index],
+                            enabled = menuForId == null,
+                            moving = movingIndex == index,
+                            appearDelayMs = null,
+                            onFocused = { focusedIndex = index; Sounds.focusMoved() },
+                            onClick = { if (movingIndex < 0) { onSelect(source.id); onDismiss() } },
+                            onLongPress = { if (movingIndex < 0) menuForId = source.id },
+                            rowEnd = index == sources.size - 1,
+                            showName = showName,
+                        )
                     }
                 }
             }
-            // 移动模式提示
+            // 移动提示
             if (movingIndex >= 0) {
                 BasicText(
                     "用方向键移动·按确定键完成",
@@ -171,7 +186,7 @@ fun LiveSourceMenu(
                 )
             }
             if (menuForId != null) {
-                val source = sources.find { it.id == menuForId } ?: return@Box
+                val source = sources.find { it.id == menuForId } ?: return@BoxWithConstraints
                 val sourceIndex = sources.indexOf(source)
                 val first = remember { FocusRequester() }
                 LaunchedEffect(menuForId) { first.requestFocus() }
