@@ -52,7 +52,7 @@ private val liveColors = listOf(
 
 private fun liveSourceAppEntry(source: LiveSource, ctx: android.content.Context): AppEntry {
     val (top, bottom) = liveColors[source.colorIndex % liveColors.size]
-    fun resTile(resId: Int) = runCatching { TileArtFactory.bitmapTile(ctx.getDrawable(resId)!!, top, bottom) }.getOrNull()
+    fun resTile(resId: Int) = runCatching { TileArtFactory.bitmapTileFromResId(ctx, resId, top, bottom) }.getOrNull()
     val art = when (source.id) {
         "preset_0" -> resTile(app.orchard.tv.R.drawable.live_cctv)
         "preset_1" -> resTile(app.orchard.tv.R.drawable.live_yangshipin)
@@ -130,10 +130,10 @@ fun LiveSourceMenu(
                     } else if (movingId != null) {
                         val from = sources.indexOfFirst { it.id == movingId }
                         when {
-                            e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_LEFT && e.type == KeyEventType.KeyUp && from > 0 -> {
+                            e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_LEFT && e.type == KeyEventType.KeyDown && from > 0 -> {
                                 onMove(from, from - 1); true
                             }
-                            e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_RIGHT && e.type == KeyEventType.KeyUp && from < sources.size - 1 -> {
+                            e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_RIGHT && e.type == KeyEventType.KeyDown && from < sources.size - 1 -> {
                                 onMove(from, from + 1); true
                             }
                             e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_CENTER && e.type == KeyEventType.KeyUp -> {

@@ -223,6 +223,26 @@ object TileArtFactory {
         return finish(back, null)
     }
 
+    /** Same but from a resource id, sampling down large PNGs. */
+    fun bitmapTileFromResId(ctx: android.content.Context, resId: Int, top: Int, bottom: Int): TileArt {
+        val opts = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        android.graphics.BitmapFactory.decodeResource(ctx.resources, resId, opts)
+        opts.inSampleSize = maxOf(1, opts.outWidth / W)
+        opts.inJustDecodeBounds = false
+        val bmp = android.graphics.BitmapFactory.decodeResource(ctx.resources, resId, opts)
+        val back = createBitmap(W, H)
+        Canvas(back).apply {
+            drawColor(0xFF111111.toInt())
+            val scale = max(W.toFloat() / bmp.width, H.toFloat() / bmp.height)
+            val dw = (bmp.width * scale).roundToInt()
+            val dh = (bmp.height * scale).roundToInt()
+            drawBitmap(bmp, null, android.graphics.Rect((W - dw) / 2, (H - dh) / 2, (W + dw) / 2, (H + dh) / 2),
+                Paint(Paint.FILTER_BITMAP_FLAG))
+        }
+        bmp.recycle()
+        return finish(back, null)
+    }
+
     /** One of Aerial's own glyphs in white over [top] to [bottom]; also for [TileRecipe.glyph]. */
     fun glyphTile(top: Int, bottom: Int, glyph: Glyph): TileArt {
         val back = colorTile(top, bottom)
