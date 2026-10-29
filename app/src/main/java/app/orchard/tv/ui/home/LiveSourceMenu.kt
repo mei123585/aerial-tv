@@ -165,7 +165,7 @@ fun LiveSourceMenu(
             }
             if (movingId != null) {
                 BasicText(
-                    "用方向键移动·按确定键完成",
+                    "用方向键移动 · 按确定键完成",
                     style = TextStyle(Color.White, fontSize = 14.sp),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
