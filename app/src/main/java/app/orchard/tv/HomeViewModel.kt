@@ -688,11 +688,15 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
      * Home was pressed. On Home itself focus goes back to the top row, as on tvOS; coming back
      * from an app opened from the grid, focus stays on that app's tile.
      */
+    /** 自增计数器，HOME键被按下时自增，HomeScreen监听它恢复UI */
+    var homePressCount by mutableStateOf(0); private set
+
     fun onHomePressed(resetFocus: Boolean = true) {
         screensaverVisible = false
         AerialSettings.relock()
         overlay = Overlay.None
         movingKey = null
+        homePressCount++
         if (resetFocus) homeResetPending = true
     }
 

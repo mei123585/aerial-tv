@@ -151,7 +151,10 @@ fun LiveSourceMenu(
                             menuForId != null -> {
                                 val id = menuForId
                                 menuForId = null
-                                id?.let { runCatching { requester(it).requestFocus() } }
+                                kotlinx.coroutines.MainScope().launch {
+                                    kotlinx.coroutines.delay(50)
+                                    id?.let { runCatching { requester(it).requestFocus() } }
+                                }
                                 true
                             }
                             movingId != null -> { movingId = null; true }
