@@ -82,18 +82,17 @@ fun LiveSourceMenu(
     onDelete: (String) -> Unit,
     onDismiss: () -> Unit,
     onMenuOpenChange: (Boolean) -> Unit = {},
+    onMovingChange: (Boolean) -> Unit = {},
 ) {
     var focusedId by remember { mutableStateOf(currentId) }
     var menuForId by remember { mutableStateOf<String?>(null) }
     var movingId by remember { mutableStateOf<String?>(null) }
     var ignoreMenuKeyUp by remember { mutableStateOf(true) }
     LaunchedEffect(visible) {
-        if (visible) {
-            kotlinx.coroutines.delay(500)
-            ignoreMenuKeyUp = false
-        }
+        if (visible) ignoreMenuKeyUp = true
     }
     LaunchedEffect(menuForId) { onMenuOpenChange(menuForId != null) }
+    LaunchedEffect(movingId) { onMovingChange(movingId != null) }
     val requesters = remember { HashMap<String, FocusRequester>() }
     fun requester(id: String) = requesters.getOrPut(id) { FocusRequester() }
     val density = LocalDensity.current
@@ -134,6 +133,14 @@ fun LiveSourceMenu(
                     if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_HOME && e.type == KeyEventType.KeyDown) {
                         onDismiss()
                         return@onPreviewKeyEvent true
+                    }
+                    // 任何方向键/确认键后才允许菜单键呼出上下文菜单
+                    if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_UP ||
+                        e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_DOWN ||
+                        e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_LEFT ||
+                        e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_RIGHT ||
+                        e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_DPAD_CENTER) {
+                        ignoreMenuKeyUp = false
                     }
                     if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_MENU && e.type == KeyEventType.KeyUp && menuForId == null && movingId == null && !ignoreMenuKeyUp) {
                         requester(focusedId).requestFocus()

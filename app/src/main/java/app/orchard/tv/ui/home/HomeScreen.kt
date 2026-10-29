@@ -235,6 +235,7 @@ fun HomeScreen(
         targetValue = if (uiHidden) 0f else 1f,
         animationSpec = androidx.compose.animation.core.tween(250), label = "uiAlpha")
     var liveMenuOpen by remember { mutableStateOf(false) }
+    var liveMoving by remember { mutableStateOf(false) }
     var lastKeyTime by remember { mutableStateOf(0L) }
     val focusedPkg = apps.getOrNull(focusedIndex)?.packageName ?: ""
     val channelPreviewVisible = AerialSettings.livePreviewEnabled &&
@@ -243,16 +244,16 @@ fun HomeScreen(
         !vm.screensaverVisible && moving == null
     LaunchedEffect(channelPreviewVisible) { vm.livePlaying = channelPreviewVisible }
     // 10秒无操作自动隐藏UI（一级和二级菜单都生效）
-    LaunchedEffect(focusedPkg, overlay, uiHidden, lastKeyTime, channelPreviewVisible, liveMenuOpen) {
+    LaunchedEffect(focusedPkg, overlay, uiHidden, lastKeyTime, channelPreviewVisible, liveMenuOpen, liveMoving) {
         if (channelPreviewVisible && focusedPkg == "com.jxiptv.softconsole" && overlay == Overlay.None && !uiHidden) {
             delay(10_000)
             uiHidden = true
         }
-        // 二级菜单打开时也10秒自动隐藏（上下文菜单打开时不自动隐藏）
-        if (overlay is Overlay.LiveSourceMenu && !liveMenuOpen) {
+        // 二级菜单打开时也10秒自动隐藏（上下文菜单/移动模式时不自动隐藏）
+        if (overlay is Overlay.LiveSourceMenu && !liveMenuOpen && !liveMoving) {
             delay(10_000)
             vm.overlay = Overlay.None
-            uiHidden = true // 二级菜单超时关闭也回到隐藏状态
+            uiHidden = true
         }
     }
     // The aerial wallpaper's film, and how far it shows through.
@@ -1052,6 +1053,7 @@ val target = with(density) { metrics.scrollFor(if (inGrid) focusedRow else 0, ro
             onDelete = { vm.removeLiveSource(it) },
             onDismiss = { vm.overlay = Overlay.None },
             onMenuOpenChange = { liveMenuOpen = it },
+            onMovingChange = { liveMoving = it },
         )
     }
 }
