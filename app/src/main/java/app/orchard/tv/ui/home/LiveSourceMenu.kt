@@ -50,23 +50,23 @@ private val liveColors = listOf(
     Pair(0xFF00796B.toInt(), 0xFF004D40.toInt()),
 )
 
+private fun liveSourceIconResId(source: LiveSource): Int? = when (source.id) {
+    "preset_0" -> app.orchard.tv.R.drawable.live_cctv
+    "preset_1" -> app.orchard.tv.R.drawable.live_yangshipin
+    "preset_2" -> app.orchard.tv.R.drawable.live_cctvkuikan
+    "preset_3" -> app.orchard.tv.R.drawable.live_kuikan
+    else -> null
+}
+
 private fun liveSourceAppEntry(source: LiveSource, ctx: android.content.Context): AppEntry {
     val (top, bottom) = liveColors[source.colorIndex % liveColors.size]
-    fun resTile(resId: Int) = runCatching { TileArtFactory.bitmapTileFromResId(ctx, resId, top, bottom) }.getOrNull()
-    val art = when (source.id) {
-        "preset_0" -> resTile(app.orchard.tv.R.drawable.live_cctv)
-        "preset_1" -> resTile(app.orchard.tv.R.drawable.live_yangshipin)
-        "preset_2" -> resTile(app.orchard.tv.R.drawable.live_cctvkuikan)
-        "preset_3" -> resTile(app.orchard.tv.R.drawable.live_kuikan)
-        else -> null
-    } ?: TileArtFactory.glyphTile(top, bottom, Glyph.Play)
     return AppEntry(
         packageName = "live_${source.id}",
         label = source.name,
         component = ComponentName("app.orchard.tv", "app.orchard.tv.MainActivity"),
         leanback = true,
         removable = !source.isPreset,
-        art = art,
+        art = TileArtFactory.glyphTile(top, bottom, Glyph.Play),
     )
 }
 
@@ -146,7 +146,17 @@ fun LiveSourceMenu(
         ) {
             // 绝对定位每个卡片，带位置动画（完全照搬一级菜单）
             sources.forEachIndexed { index, source ->
-                val app = remember(source.id, source.name) { liveSourceAppEntry(source, context) }
+                val fallback = remember(source.id, source.name) { liveSourceAppEntry(source, context) }
+                val artState = androidx.compose.runtime.produceState<app.orchard.tv.apps.TileArt?>(initialValue = fallback.art, source.id, source.name) {
+                    val resId = liveSourceIconResId(source)
+                    if (resId != null) {
+                        val (top, bottom) = liveColors[source.colorIndex % liveColors.size]
+                        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+                            runCatching { TileArtFactory.bitmapTileFromResId(context, resId, top, bottom) }.getOrNull() ?: fallback.art
+                        }
+                    }
+                }
+                val app = remember(fallback, artState.value) { fallback.copy(art = artState.value ?: fallback.art) }
                 androidx.compose.runtime.key(source.id) {
                     val xPx = with(density) { (gridMargin + (tileW + gridGap) * index).roundToPx() }
                     val yPx = with(density) { (screenH - bottomPad - tileH).roundToPx() }
