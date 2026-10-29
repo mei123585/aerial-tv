@@ -140,6 +140,7 @@ fun LiveSourceMenu(
                 sources.forEachIndexed { index, source ->
                     val app = remember(source.id, source.name) { liveSourceAppEntry(source) }
                     val showName = showAllNames || index == focusedIndex
+                    androidx.compose.runtime.key(source.id) {
                     AppTile(
                         app = app,
                         width = tileW,
@@ -154,6 +155,7 @@ fun LiveSourceMenu(
                         rowEnd = index == sources.size - 1,
                         showName = showName,
                     )
+                    }
                 }
             }
             // 移动模式提示
