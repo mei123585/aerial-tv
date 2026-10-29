@@ -93,6 +93,16 @@ fun LiveSourceMenu(
     }
     LaunchedEffect(menuForId) { onMenuOpenChange(menuForId != null) }
     LaunchedEffect(movingId) { onMovingChange(movingId != null) }
+    // 上下文菜单关闭后焦点回到原卡片
+    var lastMenuId by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(menuForId) {
+        if (menuForId != null) lastMenuId = menuForId
+        else if (lastMenuId != null) {
+            kotlinx.coroutines.delay(100)
+            lastMenuId?.let { runCatching { requester(it).requestFocus() } }
+            lastMenuId = null
+        }
+    }
     val requesters = remember { HashMap<String, FocusRequester>() }
     fun requester(id: String) = requesters.getOrPut(id) { FocusRequester() }
     val density = LocalDensity.current
@@ -103,7 +113,7 @@ fun LiveSourceMenu(
     }
     // 移动时焦点跟随
     LaunchedEffect(movingId, sources) {
-        movingId?.let { kotlinx.coroutines.delay(50); runCatching { requester(it).requestFocus() } }
+        movingId?.let { runCatching { requester(it).requestFocus() } }
     }
 
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -149,12 +159,7 @@ fun LiveSourceMenu(
                     } else if (e.nativeKeyEvent.keyCode == NativeKeyEvent.KEYCODE_BACK && e.type == KeyEventType.KeyUp) {
                         when {
                             menuForId != null -> {
-                                val id = menuForId
                                 menuForId = null
-                                kotlinx.coroutines.MainScope().launch {
-                                    kotlinx.coroutines.delay(50)
-                                    id?.let { runCatching { requester(it).requestFocus() } }
-                                }
                                 true
                             }
                             movingId != null -> { movingId = null; true }
