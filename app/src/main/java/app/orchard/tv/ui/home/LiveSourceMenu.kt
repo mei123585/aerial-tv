@@ -88,7 +88,7 @@ fun LiveSourceMenu(
     }
     // 移动时焦点跟随
     LaunchedEffect(movingId, sources) {
-        movingId?.let { kotlinx.coroutines.withFrameNanos { }; runCatching { requester(it).requestFocus() } }
+        movingId?.let { kotlinx.coroutines.delay(50); runCatching { requester(it).requestFocus() } }
     }
 
     val gridMargin = 56.dp
